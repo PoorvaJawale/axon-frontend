@@ -16,13 +16,13 @@ export function Header() {
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           <Link
-            href="#features"
+            href="/#features"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Features
           </Link>
           <Link
-            href="#pricing"
+            href="/#pricing"
             className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Pricing
@@ -42,7 +42,7 @@ export function Header() {
             Sign In
           </Link>
           <Link
-            href="#"
+            href="/dashboard"
             className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Get API Key
