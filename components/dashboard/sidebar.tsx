@@ -31,7 +31,7 @@ export function Sidebar() {
             alt="Axon"
             width={160}
             height={50}
-            className="h-10 w-auto"
+            className="h-[110px] w-auto -my-5"
           />
         </Link>
       </div>
