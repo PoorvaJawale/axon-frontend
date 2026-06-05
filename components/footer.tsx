@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Shield, Github } from "lucide-react";
+import { Shield, ExternalLink } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -39,7 +39,7 @@ export function Footer() {
               href="#"
               className="inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
-              <Github className="h-5 w-5" />
+              <ExternalLink className="h-5 w-5" />
               View on GitHub
             </Link>
           </div>
