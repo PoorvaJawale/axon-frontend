@@ -30,9 +30,9 @@ export function Footer() {
               <Image
                 src="/axon-logo.png"
                 alt="Axon"
-                width={120}
-                height={40}
-                className="h-8 w-auto"
+                width={180}
+                height={60}
+                className="h-12 w-auto"
               />
             </Link>
             <p className="mb-6 max-w-xs text-sm text-muted-foreground">

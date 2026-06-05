@@ -9,9 +9,9 @@ export function Header() {
           <Image
             src="/axon-logo.png"
             alt="Axon"
-            width={120}
-            height={40}
-            className="h-8 w-auto"
+            width={180}
+            height={60}
+            className="h-12 w-auto"
           />
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
