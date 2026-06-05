@@ -1,13 +1,18 @@
 import Link from "next/link";
-import { Shield } from "lucide-react";
+import Image from "next/image";
 
 export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
-          <span className="text-lg font-semibold text-foreground">ValidAI</span>
+          <Image
+            src="/axon-logo.png"
+            alt="Axon"
+            width={120}
+            height={40}
+            className="h-8 w-auto"
+          />
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
           <Link

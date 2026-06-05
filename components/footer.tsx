@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Shield, ExternalLink } from "lucide-react";
+import Image from "next/image";
+import { ExternalLink } from "lucide-react";
 
 const footerLinks = {
   product: [
@@ -26,10 +27,13 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
             <Link href="/" className="mb-4 flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="text-lg font-semibold text-foreground">
-                ValidAI
-              </span>
+              <Image
+                src="/axon-logo.png"
+                alt="Axon"
+                width={120}
+                height={40}
+                className="h-8 w-auto"
+              />
             </Link>
             <p className="mb-6 max-w-xs text-sm text-muted-foreground">
               AI output validation middleware for production systems. Stop
@@ -101,7 +105,7 @@ export function Footer() {
 
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} ValidAI. All rights reserved.
+            &copy; {new Date().getFullYear()} Axon. All rights reserved.
           </p>
           <div className="flex gap-6">
             <Link

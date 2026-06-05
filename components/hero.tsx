@@ -21,7 +21,7 @@ export function Hero() {
         </h1>
 
         <p className="mx-auto mb-10 max-w-2xl text-pretty text-lg text-muted-foreground md:text-xl">
-          ValidAI is an AI output validation middleware that sits between your
+          Axon is an AI output validation middleware that sits between your
           AI agents and production systems. Validate, verify, and secure every
           AI response before it reaches your users.
         </p>

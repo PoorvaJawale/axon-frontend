@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ValidAI - AI Output Validation Middleware",
+  title: "Axon - AI Output Validation Middleware",
   description:
-    "Stop AI agents from breaking your production systems. ValidAI validates AI outputs before they reach production.",
+    "Stop AI agents from breaking your production systems. Axon validates AI outputs before they reach production.",
 };
 
 export default function RootLayout({
