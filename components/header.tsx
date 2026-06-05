@@ -4,14 +4,14 @@ import Image from "next/image";
 export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
-      <div className="mx-auto flex h-36 max-w-6xl items-center justify-between px-6">
+      <div className="mx-auto flex h-52 max-w-6xl items-center justify-between px-6">
         <Link href="/" className="flex items-center gap-2">
           <Image
             src="/axon-logo.png"
             alt="Axon"
-            width={500}
-            height={150}
-            className="h-32 w-auto"
+            width={1200}
+            height={400}
+            className="h-44 w-auto"
           />
         </Link>
         <nav className="hidden items-center gap-8 md:flex">
