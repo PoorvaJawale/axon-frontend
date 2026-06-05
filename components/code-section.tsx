@@ -96,11 +96,7 @@ export function CodeSection() {
                       <span className="mr-4 inline-block w-6 select-none text-right text-muted-foreground/50">
                         {i + 1}
                       </span>
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: highlightSyntax(line),
-                        }}
-                      />
+                      <HighlightedLine line={line} />
                     </span>
                   ))}
                 </code>
@@ -113,22 +109,78 @@ export function CodeSection() {
   );
 }
 
-function highlightSyntax(line: string): string {
-  return line
-    .replace(
-      /(const|await|method|headers|body)/g,
-      '<span class="text-purple-400">$1</span>'
-    )
-    .replace(
-      /(".*?")/g,
-      '<span class="text-emerald-400">$1</span>'
-    )
-    .replace(
-      /(fetch|JSON\.stringify)/g,
-      '<span class="text-yellow-400">$1</span>'
-    )
-    .replace(
-      /(\/\/.*$)/g,
-      '<span class="text-muted-foreground/60">$1</span>'
-    );
+function HighlightedLine({ line }: { line: string }) {
+  const tokens = tokenizeLine(line);
+  return (
+    <span>
+      {tokens.map((token, i) => (
+        <span key={i} className={token.className}>
+          {token.text}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function tokenizeLine(line: string): { text: string; className: string }[] {
+  const tokens: { text: string; className: string }[] = [];
+  const keywords = ["const", "await", "method", "headers", "body"];
+  const functions = ["fetch", "JSON"];
+  
+  // Handle comments
+  if (line.includes("//")) {
+    const commentIndex = line.indexOf("//");
+    const beforeComment = line.slice(0, commentIndex);
+    const comment = line.slice(commentIndex);
+    tokens.push(...tokenizeSegment(beforeComment, keywords, functions));
+    tokens.push({ text: comment, className: "text-muted-foreground/60" });
+    return tokens;
+  }
+  
+  return tokenizeSegment(line, keywords, functions);
+}
+
+function tokenizeSegment(
+  segment: string,
+  keywords: string[],
+  functions: string[]
+): { text: string; className: string }[] {
+  const tokens: { text: string; className: string }[] = [];
+  
+  // Match strings, keywords, and functions
+  const regex = /("(?:[^"\\]|\\.)*")|(\b(?:const|await|method|headers|body)\b)|(\b(?:fetch|JSON)\b)/g;
+  
+  let lastIndex = 0;
+  let match;
+  
+  while ((match = regex.exec(segment)) !== null) {
+    // Add text before match
+    if (match.index > lastIndex) {
+      tokens.push({
+        text: segment.slice(lastIndex, match.index),
+        className: "",
+      });
+    }
+    
+    // Add matched token with appropriate class
+    if (match[1]) {
+      // String
+      tokens.push({ text: match[1], className: "text-emerald-400" });
+    } else if (match[2]) {
+      // Keyword
+      tokens.push({ text: match[2], className: "text-purple-400" });
+    } else if (match[3]) {
+      // Function
+      tokens.push({ text: match[3], className: "text-yellow-400" });
+    }
+    
+    lastIndex = regex.lastIndex;
+  }
+  
+  // Add remaining text
+  if (lastIndex < segment.length) {
+    tokens.push({ text: segment.slice(lastIndex), className: "" });
+  }
+  
+  return tokens;
 }
