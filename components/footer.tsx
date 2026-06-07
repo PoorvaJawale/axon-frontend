@@ -4,19 +4,19 @@ import { ExternalLink } from "lucide-react";
 
 const footerLinks = {
   product: [
-    { label: "Features", href: "#features" },
-    { label: "Pricing", href: "#pricing" },
-    { label: "Changelog", href: "#" },
+    { label: "Features", href: "/#features" },
+    { label: "Pricing", href: "/#pricing" },
+    { label: "Changelog", href: "/changelog" },
   ],
   resources: [
-    { label: "Docs", href: "#" },
-    { label: "API Reference", href: "#" },
-    { label: "Status", href: "#" },
+    { label: "Docs", href: "/docs" },
+    { label: "API Reference", href: "/api-reference" },
+    { label: "Status", href: "/status" },
   ],
   company: [
-    { label: "About", href: "#" },
-    { label: "Blog", href: "#" },
-    { label: "Careers", href: "#" },
+    { label: "About", href: "/about" },
+    { label: "Blog", href: "/blog" },
+    { label: "Careers", href: "/careers" },
   ],
 };
 

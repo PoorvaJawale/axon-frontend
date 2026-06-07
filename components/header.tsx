@@ -36,7 +36,7 @@ export function Header() {
         </nav>
         <div className="flex items-center gap-4">
           <Link
-            href="#"
+            href="/sign-in"
             className="text-sm font-medium text-foreground transition-colors hover:text-primary"
           >
             Sign In

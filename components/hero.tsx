@@ -1,7 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 
 export function Hero() {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  const handleGetApiKey = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (isSignedIn) {
+      router.push("/dashboard/api-keys");
+    } else {
+      router.push("/sign-up");
+    }
+  };
+
   return (
     <section className="relative flex min-h-screen flex-col items-center justify-center px-6 pt-16">
       {/* Background gradient */}
@@ -27,15 +43,15 @@ export function Hero() {
         </p>
 
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <Link
-            href="#"
-            className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-all hover:bg-primary/90"
+          <button
+            onClick={handleGetApiKey}
+            className="group inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-medium text-primary-foreground transition-all hover:bg-primary/90 cursor-pointer"
           >
             Get API Key
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-          </Link>
+          </button>
           <Link
-            href="#"
+            href="/docs"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-6 py-3 text-base font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
           >
             View Docs

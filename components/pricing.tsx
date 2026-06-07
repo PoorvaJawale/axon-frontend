@@ -1,5 +1,8 @@
+"use client";
+
 import { Check } from "lucide-react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@clerk/nextjs";
 
 const plans = [
   {
@@ -51,6 +54,27 @@ const plans = [
 ];
 
 export function Pricing() {
+  const { isSignedIn } = useAuth();
+  const router = useRouter();
+
+  const handlePlanClick = (planName: string) => {
+    if (planName === "Free") {
+      if (isSignedIn) {
+        router.push("/dashboard");
+      } else {
+        router.push("/sign-up");
+      }
+    } else if (planName === "Pro") {
+      if (isSignedIn) {
+        router.push("/dashboard/billing");
+      } else {
+        router.push("/sign-up");
+      }
+    } else if (planName === "Enterprise") {
+      router.push("/enterprise-contact");
+    }
+  };
+
   return (
     <section id="pricing" className="relative px-6 py-24">
       <div className="mx-auto max-w-6xl">
@@ -106,16 +130,16 @@ export function Pricing() {
                 ))}
               </ul>
 
-              <Link
-                href="#"
-                className={`block w-full rounded-lg py-3 text-center text-sm font-medium transition-colors ${
+              <button
+                onClick={() => handlePlanClick(plan.name)}
+                className={`block w-full rounded-lg py-3 text-center text-sm font-medium transition-colors cursor-pointer ${
                   plan.highlighted
                     ? "bg-primary text-primary-foreground hover:bg-primary/90"
                     : "border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 }`}
               >
                 {plan.cta}
-              </Link>
+              </button>
             </div>
           ))}
         </div>
