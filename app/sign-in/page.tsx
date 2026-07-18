@@ -8,8 +8,14 @@ const clerkAppearance = {
   baseTheme: dark,
   variables: {
     colorPrimary: "#22c55e",
+    colorPrimaryForeground: "#000000",
     colorBackground: "#111111",
-    colorInputBackground: "#0c0c0c",
+    colorForeground: "#ffffff",
+    colorMutedForeground: "#9ca3af",
+    colorInput: "#0c0c0c",
+    colorInputForeground: "#ffffff",
+    colorBorder: "#1f2937",
+    colorNeutral: "#ffffff",
     borderRadius: "0.75rem",
   },
   elements: {
