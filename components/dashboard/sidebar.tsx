@@ -30,11 +30,14 @@ export function Sidebar() {
   const pathname = usePathname();
   const { username, email, userPlan, logout } = useAuth();
 
-  // Dynamically fetch usage from mock API based on current plan state
-  const { data: usageData } = useSWR(`/webhook/usage?plan=${userPlan}`, fetcher);
+  // Live usage from the Axon backend — refreshes every 10s
+  const { data: usageData } = useSWR(`/webhook/usage`, fetcher, {
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+  });
 
-  const monthlyRequests = usageData?.monthly_requests ?? 12847;
-  const requestLimit = usageData?.request_limit ?? 50000;
+  const monthlyRequests = usageData?.monthly_requests ?? 0;
+  const requestLimit = usageData?.request_limit ?? 1000;
   const usagePercentage = Math.min((monthlyRequests / requestLimit) * 100, 100);
 
   return (

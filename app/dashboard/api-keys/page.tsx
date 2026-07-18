@@ -26,7 +26,8 @@ export default function ApiKeysPage() {
   // Dynamic usage stats fetch
   const { data: usageData } = useSWR(
     userApiKey ? `/webhook/usage` : null,
-    (url: string) => fetch(url).then((res) => res.json())
+    (url: string) => fetch(url).then((res) => res.json()),
+    { refreshInterval: 10000, revalidateOnFocus: true }
   );
 
   const monthlyRequests = usageData?.monthly_requests ?? 0;

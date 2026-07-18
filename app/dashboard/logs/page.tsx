@@ -66,7 +66,8 @@ export default function LogsPage() {
 
   const { data, isLoading } = useSWR(
     userApiKey ? [`/webhook/logs?${queryParams.toString()}&plan=${userPlan}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token)
+    ([url, token]) => fetcher(url, token),
+    { refreshInterval: 10000, revalidateOnFocus: true }
   );
 
   const logs = data?.logs ?? [];

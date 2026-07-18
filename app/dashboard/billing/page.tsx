@@ -27,14 +27,15 @@ const fetcher = (url: string, token: string | null) =>
 export default function BillingPage() {
   const { userApiKey, userPlan, updatePlan } = useAuth();
 
-  // Dynamically fetch usage from mock API based on current plan state
+  // Live usage from the Axon backend
   const { data: usageData, mutate: mutateUsage } = useSWR(
-    userApiKey ? [`/webhook/usage?plan=${userPlan}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token)
+    userApiKey ? [`/webhook/usage`, userApiKey] : null,
+    ([url, token]) => fetcher(url, token),
+    { refreshInterval: 10000, revalidateOnFocus: true }
   );
 
-  const monthlyRequests = usageData?.monthly_requests ?? 12847;
-  const requestLimit = usageData?.request_limit ?? 50000;
+  const monthlyRequests = usageData?.monthly_requests ?? 0;
+  const requestLimit = usageData?.request_limit ?? 1000;
   const usagePercentage = Math.min((monthlyRequests / requestLimit) * 100, 100);
 
   // Modal states
@@ -272,7 +273,7 @@ export default function BillingPage() {
               <ul className="text-xs text-muted-foreground space-y-2.5 pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0" />
-                  50,000 requests per month
+                  1,000 validations per month
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0" />
@@ -301,7 +302,7 @@ export default function BillingPage() {
               <ul className="text-xs text-muted-foreground space-y-2.5 pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0" />
-                  500,000 requests per month
+                  10,000 validations per month
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0" />
@@ -598,7 +599,7 @@ export default function BillingPage() {
                 <div className="rounded-lg bg-muted/20 p-3 text-xs flex justify-between items-center">
                   <div>
                     <p className="font-semibold text-white">Axon Pro Subscription</p>
-                    <p className="text-muted-foreground">500,000 monthly validations</p>
+                    <p className="text-muted-foreground">10,000 monthly validations</p>
                   </div>
                   <span className="text-base font-bold text-white">$29.00/mo</span>
                 </div>
@@ -666,7 +667,7 @@ export default function BillingPage() {
             </div>
 
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Are you sure you want to cancel your Pro plan? Your subscription will immediately return to the Free sandbox tier limit of 50,000 monthly validations and rate limiting filters will apply.
+              Are you sure you want to cancel your Pro plan? Your subscription will immediately return to the Free tier limit of 1,000 monthly validations and rate limiting filters will apply.
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">

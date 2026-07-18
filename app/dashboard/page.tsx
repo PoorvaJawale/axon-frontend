@@ -29,15 +29,17 @@ export default function DashboardPage() {
   const { userApiKey, userPlan } = useAuth();
   const router = useRouter();
   
-  // SWR fetches pointing to new webhook mock endpoints
+  // Live data from the Axon backend — refreshes every 10s and on tab focus
   const { data: logsData, error: logsError, isLoading: logsLoading } = useSWR(
     userApiKey ? [`/webhook/logs?plan=${userPlan}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token)
+    ([url, token]) => fetcher(url, token),
+    { refreshInterval: 10000, revalidateOnFocus: true }
   );
 
   const { data: alertsData, error: alertsError, isLoading: alertsLoading } = useSWR(
     userApiKey ? ["/webhook/alerts", userApiKey] : null,
-    ([url, token]) => fetcher(url, token)
+    ([url, token]) => fetcher(url, token),
+    { refreshInterval: 10000, revalidateOnFocus: true }
   );
 
   const logs = logsData?.logs ?? [];
@@ -85,28 +87,24 @@ export default function DashboardPage() {
               title="Total Validations"
               value={stats.total}
               icon={Activity}
-              trend={{ value: 12, isPositive: true }}
             />
             <MetricCard
               title="Passed"
               value={stats.passed}
               icon={CheckCircle}
               variant="success"
-              trend={{ value: 8, isPositive: true }}
             />
             <MetricCard
               title="Blocked"
               value={stats.blocked}
               icon={XCircle}
               variant="danger"
-              trend={{ value: 3, isPositive: false }}
             />
             <MetricCard
               title="Async Flags"
               value={stats.asyncFlags}
               icon={Clock}
               variant="warning"
-              trend={{ value: 5, isPositive: true }}
             />
           </>
         )}

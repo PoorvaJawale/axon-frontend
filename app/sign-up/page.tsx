@@ -1,21 +1,20 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 import { Header } from "@/components/header";
 
 const clerkAppearance = {
+  baseTheme: dark,
   variables: {
     colorPrimary: "#22c55e",
     colorBackground: "#111111",
-    colorText: "#ffffff",
-    colorTextSecondary: "#9ca3af",
     colorInputBackground: "#0c0c0c",
-    colorInputText: "#ffffff",
     borderRadius: "0.75rem",
   },
   elements: {
     card: "border border-[#1f2937] shadow-2xl",
-    formButtonPrimary: "text-[#000000] font-semibold",
+    formButtonPrimary: "!text-[#000000] font-semibold",
   },
 };
 

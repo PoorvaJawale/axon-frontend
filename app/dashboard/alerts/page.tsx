@@ -27,7 +27,8 @@ export default function AlertsPage() {
 
   const { data, isLoading, mutate } = useSWR(
     userApiKey ? [`/webhook/alerts?filter=${filter}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token)
+    ([url, token]) => fetcher(url, token),
+    { refreshInterval: 15000, revalidateOnFocus: true }
   );
 
   const alerts = data?.alerts ?? [];
