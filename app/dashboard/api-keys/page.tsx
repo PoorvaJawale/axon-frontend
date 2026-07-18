@@ -22,15 +22,22 @@ const fetcher = (url: string, token: string | null) =>
 
 export default function ApiKeysPage() {
   const { userApiKey, userPlan, regenerateKey } = useAuth();
-  
+
   // Dynamic usage stats fetch
   const { data: usageData } = useSWR(
-    userApiKey ? `/webhook/usage?plan=${userPlan}` : null,
+    userApiKey ? `/webhook/usage` : null,
     (url: string) => fetch(url).then((res) => res.json())
   );
 
-  const monthlyRequests = usageData?.monthly_requests ?? 12847;
-  const requestLimit = usageData?.request_limit ?? 50000;
+  const monthlyRequests = usageData?.monthly_requests ?? 0;
+  const requestLimit = usageData?.request_limit ?? 1000;
+  const expiresAt = usageData?.expires_at
+    ? new Date(usageData.expires_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
 
   const [copiedKey, setCopiedKey] = useState(false);
   const [isRegenerateModalOpen, setIsRegenerateModalOpen] = useState(false);
@@ -63,15 +70,16 @@ export default function ApiKeysPage() {
         headers: {
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ force: true }),
       });
 
       if (response.ok) {
         const data = await response.json();
         // Set the new generated key in state
         setNewGeneratedKey(data.apiKey);
-        // Call regenerateKey in AuthContext to persist it
-        regenerateKey();
-        
+        // Update the key in AuthContext
+        regenerateKey(data.apiKey);
+
         setIsRegenerateModalOpen(false);
         setIsNewKeyModalOpen(true);
       }
@@ -164,11 +172,11 @@ export default function ApiKeysPage() {
               </div>
               <div>
                 <p className="text-muted-foreground">Created</p>
-                <p className="mt-1 font-semibold text-white">Jun 5, 2026</p>
+                <p className="mt-1 font-semibold text-white">—</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Expires</p>
-                <p className="mt-1 font-semibold text-white">Never</p>
+                <p className="mt-1 font-semibold text-white">{expiresAt}</p>
               </div>
               <div>
                 <p className="text-muted-foreground">Monthly usage</p>

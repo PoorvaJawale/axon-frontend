@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 
 export type PlanType = "Free" | "Pro" | "Enterprise";
 
@@ -11,98 +11,90 @@ interface AuthContextType {
   userPlan: PlanType;
   username: string;
   email: string;
-  login: (email: string, apiKey: string, plan: PlanType) => void;
+  /** Full key returned once at first provisioning (null afterwards). */
+  freshKey: string | null;
+  dismissFreshKey: () => void;
   logout: () => void;
   updatePlan: (plan: PlanType) => void;
-  regenerateKey: () => string;
+  regenerateKey: (newKey: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function toPlanType(plan: string | null | undefined): PlanType {
+  const p = (plan || "free").toLowerCase();
+  if (p === "pro") return "Pro";
+  if (p === "enterprise") return "Enterprise";
+  return "Free";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const { user, isLoaded, isSignedIn } = useUser();
+  const { signOut } = useClerk();
+
   const [userApiKey, setUserApiKey] = useState<string | null>(null);
+  const [freshKey, setFreshKey] = useState<string | null>(null);
   const [userPlan, setUserPlan] = useState<PlanType>("Free");
-  const [username, setUsername] = useState<string>("Guest User");
-  const [email, setEmail] = useState<string>("");
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [provisioning, setProvisioning] = useState(false);
 
+  // Once signed in, make sure this user has a real Axon API key.
   useEffect(() => {
-    // Load auth info from localStorage on mount
-    const savedKey = localStorage.getItem("axon_api_key");
-    const savedEmail = localStorage.getItem("axon_email");
-    const savedName = localStorage.getItem("axon_username") || "Poorva Jawale";
-    const savedPlan = localStorage.getItem("axon_plan") as PlanType;
+    if (!isSignedIn || userApiKey || provisioning) return;
+    setProvisioning(true);
 
-    if (savedKey) {
-      setUserApiKey(savedKey);
-      setIsAuthenticated(true);
-      setEmail(savedEmail || "poorva@example.com");
-      setUsername(savedName);
-      setUserPlan(savedPlan || "Free");
-    }
-    setLoading(false);
-  }, []);
-
-  const login = (userEmail: string, apiKey: string, plan: PlanType) => {
-    const defaultName = "Poorva Jawale";
-    localStorage.setItem("axon_api_key", apiKey);
-    localStorage.setItem("axon_email", userEmail);
-    localStorage.setItem("axon_username", defaultName);
-    localStorage.setItem("axon_plan", plan);
-
-    setUserApiKey(apiKey);
-    setEmail(userEmail);
-    setUsername(defaultName);
-    setUserPlan(plan);
-    setIsAuthenticated(true);
-  };
+    fetch("/webhook/create-api-key", { method: "POST" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data) return;
+        if (data.apiKey) {
+          // Newly created — show the full key once so the user can save it.
+          setUserApiKey(data.apiKey);
+          setFreshKey(data.apiKey);
+        } else if (data.keyPrefix) {
+          // Existing user — only the safe prefix ever reaches the browser.
+          setUserApiKey(data.keyPrefix);
+        }
+        setUserPlan(toPlanType(data.plan));
+      })
+      .catch((err) => console.error("Key provisioning failed:", err))
+      .finally(() => setProvisioning(false));
+  }, [isSignedIn, userApiKey, provisioning]);
 
   const logout = () => {
-    localStorage.removeItem("axon_api_key");
-    localStorage.removeItem("axon_email");
-    localStorage.removeItem("axon_username");
-    localStorage.removeItem("axon_plan");
-
     setUserApiKey(null);
-    setEmail("");
-    setUsername("Guest User");
-    setUserPlan("Free");
-    setIsAuthenticated(false);
-    router.push("/sign-in");
+    setFreshKey(null);
+    signOut({ redirectUrl: "/" });
   };
 
   const updatePlan = (plan: PlanType) => {
-    localStorage.setItem("axon_plan", plan);
     setUserPlan(plan);
   };
 
-  const regenerateKey = () => {
-    const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let randomStr = "";
-    for (let i = 0; i < 24; i++) {
-      randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    const newKey = `sk-axon-${randomStr}`;
-    localStorage.setItem("axon_api_key", newKey);
+  const regenerateKey = (newKey: string) => {
     setUserApiKey(newKey);
-    return newKey;
   };
 
-  if (loading) {
-    return null; // Don't render children until we know the auth status
+  const dismissFreshKey = () => setFreshKey(null);
+
+  if (!isLoaded) {
+    return null; // Don't render children until Clerk knows the auth status
   }
+
+  const username =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+    user?.primaryEmailAddress?.emailAddress ||
+    "Guest User";
 
   return (
     <AuthContext.Provider
       value={{
-        isAuthenticated,
+        isAuthenticated: !!isSignedIn,
         userApiKey,
         userPlan,
         username,
-        email,
-        login,
+        email: user?.primaryEmailAddress?.emailAddress || "",
+        freshKey,
+        dismissFreshKey,
         logout,
         updatePlan,
         regenerateKey,

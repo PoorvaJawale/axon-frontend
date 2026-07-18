@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 
-const codeExample = `const response = await fetch("https://api.validai.dev/validate", {
+const codeExample = `const response = await fetch("https://axon-n8n-production-1512.up.railway.app/webhook/validate", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

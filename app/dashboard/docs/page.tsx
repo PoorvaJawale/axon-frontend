@@ -49,7 +49,7 @@ headers = {
 
 # Send request to Axon Middleware
 response = requests.post(
-    "https://api.axon.dev/v1/validate",
+    "https://axon-n8n-production-1512.up.railway.app/webhook/validate",
     json=payload,
     headers=headers
 )
@@ -73,7 +73,7 @@ const jsCode = `const payload = {
 };
 
 // Send request to Axon Middleware
-const response = await fetch("https://api.axon.dev/v1/validate", {
+const response = await fetch("https://axon-n8n-production-1512.up.railway.app/webhook/validate", {
   method: "POST",
   headers: {
     "Authorization": "Bearer sk-axon-YOUR_KEY",
@@ -95,7 +95,7 @@ const n8nCode = `// 1. Add an HTTP Request Node to your workflow
 // 2. Configure the Node with the following parameters:
 {
   "Method": "POST",
-  "URL": "https://api.axon.dev/v1/validate",
+  "URL": "https://axon-n8n-production-1512.up.railway.app/webhook/validate",
   "Headers": {
     "Authorization": "Bearer sk-axon-YOUR_KEY",
     "Content-Type": "application/json"

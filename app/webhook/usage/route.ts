@@ -1,21 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import { axonGet, getAxonContext } from "@/lib/axon";
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const plan = searchParams.get("plan") || "Free";
-
-  let limit = 50000;
-  if (plan === "Pro") {
-    limit = 500000;
-  } else if (plan === "Enterprise") {
-    limit = 10000000; // Representing unlimited/custom high limit
+export async function GET() {
+  const ctx = await getAxonContext();
+  if (!ctx) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const usage = {
-    monthly_requests: 12847,
-    request_limit: limit,
-    plan: plan,
-  };
+  const { ok, data } = await axonGet("/webhook/usage", ctx.apiKey);
+  if (!ok || !data) {
+    return NextResponse.json({ error: "Usage unavailable" }, { status: 502 });
+  }
 
-  return NextResponse.json(usage);
+  const usage = Array.isArray(data) ? data[0] : data;
+  return NextResponse.json({
+    monthly_requests: usage?.monthly_requests ?? 0,
+    request_limit: usage?.request_limit ?? 0,
+    remaining: usage?.remaining ?? 0,
+    plan: usage?.plan ?? "free",
+    expires_at: usage?.expires_at ?? null,
+  });
 }
