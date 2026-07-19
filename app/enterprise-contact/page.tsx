@@ -55,27 +55,6 @@ export default function EnterpriseContactPage() {
 
     setIsLoading(true);
 
-    // Prepare EmailJS keys with fallbacks
-    const serviceId = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || "service_axon";
-    const templateId = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || "template_axon";
-    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || "user_axon";
-
-    // For local development testing when EmailJS keys aren't configured yet
-    if (publicKey === "user_axon" || !publicKey) {
-      console.warn(
-        "EmailJS Public Key is not configured in .env.local. Simulating a successful submission in development mode.\n" +
-        "To connect your live EmailJS account, add these variables to your .env.local:\n" +
-        "  NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id\n" +
-        "  NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id\n" +
-        "  NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key"
-      );
-      
-      await new Promise((resolve) => setTimeout(resolve, 1200));
-      setIsSuccess(true);
-      setIsLoading(false);
-      return;
-    }
-
     // Format selected systems
     const selectedSystemsList = Object.entries(systems)
       .filter(([_, checked]) => checked)
@@ -91,32 +70,23 @@ export default function EnterpriseContactPage() {
         return labels[name] || name;
       });
 
-    const templateParams = {
-      subject: `New Enterprise Inquiry — ${companyName}`,
-      full_name: fullName,
-      work_email: workEmail,
-      company_name: companyName,
-      job_title: jobTitle || "Not Specified",
-      agents_count: agentsCount,
-      monthly_volume: monthlyVolume,
-      systems: selectedSystemsList.join(", ") || "None selected",
-      on_premise: onPremise ? "Yes" : "No",
-      use_case: useCase,
-      heard_from: heardFrom || "Not Specified",
-      to_email: "axonapiai@gmail.com",
-    };
-
     try {
-      const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
+      const response = await fetch("/webhook/contact-sales", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          service_id: serviceId,
-          template_id: templateId,
-          user_id: publicKey,
-          template_params: templateParams,
+          fullName,
+          workEmail,
+          companyName,
+          jobTitle: jobTitle || "Not Specified",
+          agentsCount,
+          monthlyVolume,
+          systems: selectedSystemsList,
+          onPremise,
+          useCase,
+          heardFrom: heardFrom || "Not Specified",
         }),
       });
 
@@ -124,12 +94,12 @@ export default function EnterpriseContactPage() {
         setIsSuccess(true);
       } else {
         const errText = await response.text();
-        console.error("EmailJS Error Response:", errText);
-        setErrorMsg("Something went wrong. Please email us directly at axonapiai@gmail.com");
+        console.error("Contact sales error response:", errText);
+        setErrorMsg("Something went wrong. Please email us directly at axonapiai2026@gmail.com");
       }
     } catch (err) {
       console.error("Fetch error submitting form:", err);
-      setErrorMsg("Something went wrong. Please email us directly at axonapiai@gmail.com");
+      setErrorMsg("Something went wrong. Please email us directly at axonapiai2026@gmail.com");
     } finally {
       setIsLoading(false);
     }
