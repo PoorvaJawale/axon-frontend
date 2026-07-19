@@ -643,7 +643,7 @@ export default function BillingPage() {
                     <p className="font-semibold text-white">Axon Pro Subscription</p>
                     <p className="text-muted-foreground">50,000 monthly validations</p>
                   </div>
-                  <span className="text-base font-bold text-white">₹2,499/mo</span>
+                  <span className="text-base font-bold text-white">₹2,999/mo</span>
                 </div>
 
                 <div className="rounded-lg border border-border/50 bg-[#0c0c0c] p-4 text-xs text-muted-foreground leading-relaxed space-y-2">
@@ -660,7 +660,7 @@ export default function BillingPage() {
                   disabled={isProcessingCheckout}
                   className="w-full rounded-lg bg-primary text-black font-bold text-sm py-3 hover:bg-primary/90 transition-colors pt-3 disabled:opacity-60"
                 >
-                  {isProcessingCheckout ? "Opening secure checkout..." : "Pay ₹2,499 with Razorpay"}
+                  {isProcessingCheckout ? "Opening secure checkout..." : "Pay ₹2,999 with Razorpay"}
                 </button>
               </div>
             )}
