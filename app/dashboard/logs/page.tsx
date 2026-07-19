@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
-import { useAuth } from "@/app/context/AuthContext";
 import {
   Search,
   ChevronDown,
@@ -26,15 +25,9 @@ export type WebhookLogEntry = {
   outputContent: string;
 };
 
-const fetcher = (url: string, token: string | null) =>
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token || ""}`,
-    },
-  }).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function LogsPage() {
-  const { userApiKey, userPlan } = useAuth();
   
   // State for search and filtering
   const [search, setSearch] = useState("");
@@ -65,8 +58,8 @@ export default function LogsPage() {
   });
 
   const { data, isLoading } = useSWR(
-    userApiKey ? [`/webhook/logs?${queryParams.toString()}&plan=${userPlan}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token),
+    `/webhook/logs?${queryParams.toString()}`,
+    fetcher,
     { refreshInterval: 10000, revalidateOnFocus: true }
   );
 

@@ -18,27 +18,23 @@ import {
 } from "lucide-react";
 import { MetricCard, MetricCardSkeleton } from "@/components/dashboard/metric-card";
 
-const fetcher = (url: string, token: string | null) =>
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token || ""}`,
-    },
-  }).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function DashboardPage() {
-  const { userApiKey, userPlan } = useAuth();
+  const { userApiKey } = useAuth();
   const router = useRouter();
-  
-  // Live data from the Axon backend — refreshes every 10s and on tab focus
+
+  // Live data from the Axon backend — the session cookie authenticates the
+  // proxy routes, so no client-side key is needed. Refreshes every 10s.
   const { data: logsData, error: logsError, isLoading: logsLoading } = useSWR(
-    userApiKey ? [`/webhook/logs?plan=${userPlan}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token),
+    "/webhook/logs",
+    fetcher,
     { refreshInterval: 10000, revalidateOnFocus: true }
   );
 
   const { data: alertsData, error: alertsError, isLoading: alertsLoading } = useSWR(
-    userApiKey ? ["/webhook/alerts", userApiKey] : null,
-    ([url, token]) => fetcher(url, token),
+    "/webhook/alerts",
+    fetcher,
     { refreshInterval: 10000, revalidateOnFocus: true }
   );
 

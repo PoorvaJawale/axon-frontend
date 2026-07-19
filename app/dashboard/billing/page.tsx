@@ -17,20 +17,15 @@ import {
   XCircle,
 } from "lucide-react";
 
-const fetcher = (url: string, token: string | null) =>
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token || ""}`,
-    },
-  }).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function BillingPage() {
-  const { userApiKey, userPlan, updatePlan } = useAuth();
+  const { userPlan, updatePlan } = useAuth();
 
-  // Live usage from the Axon backend
+  // Live usage from the Axon backend — session cookie authenticates the proxy
   const { data: usageData, mutate: mutateUsage } = useSWR(
-    userApiKey ? [`/webhook/usage`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token),
+    "/webhook/usage",
+    fetcher,
     { refreshInterval: 10000, revalidateOnFocus: true }
   );
 

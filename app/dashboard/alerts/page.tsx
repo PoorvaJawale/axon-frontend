@@ -2,7 +2,6 @@
 
 import React, { useState } from "react";
 import useSWR from "swr";
-import { useAuth } from "@/app/context/AuthContext";
 import {
   AlertTriangle,
   CheckCircle,
@@ -14,35 +13,26 @@ import {
   EyeOff,
 } from "lucide-react";
 
-const fetcher = (url: string, token: string | null) =>
-  fetch(url, {
-    headers: {
-      Authorization: `Bearer ${token || ""}`,
-    },
-  }).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function AlertsPage() {
-  const { userApiKey } = useAuth();
   const [filter, setFilter] = useState<"All" | "Unreviewed" | "Reviewed">("Unreviewed");
 
   const { data, isLoading, mutate } = useSWR(
-    userApiKey ? [`/webhook/alerts?filter=${filter}`, userApiKey] : null,
-    ([url, token]) => fetcher(url, token),
+    `/webhook/alerts?filter=${filter}`,
+    fetcher,
     { refreshInterval: 15000, revalidateOnFocus: true }
   );
 
   const alerts = data?.alerts ?? [];
 
   const handleMarkAsReviewed = async (alertId: string, reviewedState: boolean) => {
-    if (!userApiKey) return;
-
     // Trigger optimistic update or just call API and re-mutate
     try {
       const response = await fetch("/webhook/alerts", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${userApiKey}`,
         },
         body: JSON.stringify({ alertId, reviewed: reviewedState }),
       });
