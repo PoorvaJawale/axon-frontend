@@ -19,6 +19,38 @@ export async function getAxonContext() {
   return { userId, user, apiKey };
 }
 
+/**
+ * Set a user's plan everywhere it lives: Clerk privateMetadata (drives the UI)
+ * and the api_keys table via the n8n billing-update webhook (drives quota
+ * enforcement). Guarded by the shared signup secret.
+ */
+export async function setUserPlan(
+  userId: string,
+  plan: "free" | "pro" | "enterprise",
+  requestLimit: number
+) {
+  const client = await clerkClient();
+  await client.users.updateUserMetadata(userId, {
+    privateMetadata: { axonPlan: plan },
+  });
+
+  const secret = process.env.AXON_SIGNUP_SECRET;
+  if (!secret) throw new Error("AXON_SIGNUP_SECRET not configured");
+
+  const res = await fetch(`${AXON_API_URL}/webhook/billing-update`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-axon-signup-secret": secret,
+    },
+    body: JSON.stringify({ user_id: userId, plan, request_limit: requestLimit }),
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`billing-update failed with status ${res.status}`);
+  }
+}
+
 /** GET an Axon backend endpoint with the user's API key. */
 export async function axonGet(path: string, apiKey: string) {
   const res = await fetch(`${AXON_API_URL}${path}`, {

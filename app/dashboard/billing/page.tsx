@@ -66,23 +66,70 @@ export default function BillingPage() {
     setSystems((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Upgrading Simulation
+  // Razorpay Checkout
   const handleUpgradeClick = () => {
     setIsCheckoutOpen(true);
   };
 
-  const handleConfirmPayment = () => {
+  const loadRazorpayScript = (): Promise<void> =>
+    new Promise((resolve, reject) => {
+      if ((window as any).Razorpay) return resolve();
+      const s = document.createElement("script");
+      s.src = "https://checkout.razorpay.com/v1/checkout.js";
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error("Failed to load Razorpay"));
+      document.body.appendChild(s);
+    });
+
+  const handleConfirmPayment = async () => {
     setIsProcessingCheckout(true);
-    setTimeout(() => {
+    try {
+      const res = await fetch("/webhook/razorpay-subscribe", { method: "POST" });
+      if (!res.ok) throw new Error(await res.text());
+      const { subscriptionId, keyId } = await res.json();
+
+      await loadRazorpayScript();
+
+      const rzp = new (window as any).Razorpay({
+        key: keyId,
+        subscription_id: subscriptionId,
+        name: "Axon",
+        description: "Axon Pro — 50,000 validations/month",
+        theme: { color: "#22c55e" },
+        handler: async (response: any) => {
+          try {
+            const verifyRes = await fetch("/webhook/razorpay-verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(response),
+            });
+            if (verifyRes.ok) {
+              setIsCheckoutSuccess(true);
+              updatePlan("Pro");
+              mutateUsage();
+              setTimeout(() => {
+                setIsCheckoutSuccess(false);
+                setIsCheckoutOpen(false);
+              }, 2000);
+            } else {
+              alert(
+                "Payment received but verification failed. Please contact support — do not pay again."
+              );
+            }
+          } finally {
+            setIsProcessingCheckout(false);
+          }
+        },
+        modal: {
+          ondismiss: () => setIsProcessingCheckout(false),
+        },
+      });
+      rzp.open();
+    } catch (err) {
+      console.error("Checkout failed to start:", err);
+      alert("Could not start checkout. Please try again in a moment.");
       setIsProcessingCheckout(false);
-      setIsCheckoutSuccess(true);
-      setTimeout(() => {
-        updatePlan("Pro");
-        mutateUsage();
-        setIsCheckoutSuccess(false);
-        setIsCheckoutOpen(false);
-      }, 1500);
-    }, 1800);
+    }
   };
 
   // Downgrading Simulation
@@ -596,53 +643,24 @@ export default function BillingPage() {
                     <p className="font-semibold text-white">Axon Pro Subscription</p>
                     <p className="text-muted-foreground">50,000 monthly validations</p>
                   </div>
-                  <span className="text-base font-bold text-white">$29.00/mo</span>
+                  <span className="text-base font-bold text-white">₹2,499/mo</span>
                 </div>
 
-                <div className="space-y-3 text-xs">
-                  <div>
-                    <label className="block text-muted-foreground font-semibold uppercase tracking-wider mb-1">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      disabled={isProcessingCheckout}
-                      placeholder="4111 1111 1111 1111"
-                      className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-white placeholder-muted-foreground/50 outline-none"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-muted-foreground font-semibold uppercase tracking-wider mb-1">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        disabled={isProcessingCheckout}
-                        placeholder="MM / YY"
-                        className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-white placeholder-muted-foreground/50 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-muted-foreground font-semibold uppercase tracking-wider mb-1">
-                        CVC
-                      </label>
-                      <input
-                        type="text"
-                        disabled={isProcessingCheckout}
-                        placeholder="•••"
-                        className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-white placeholder-muted-foreground/50 outline-none"
-                      />
-                    </div>
-                  </div>
+                <div className="rounded-lg border border-border/50 bg-[#0c0c0c] p-4 text-xs text-muted-foreground leading-relaxed space-y-2">
+                  <p className="text-white font-semibold">Secure payment via Razorpay</p>
+                  <p>
+                    You'll complete payment in the Razorpay window — UPI, credit &
+                    debit cards, netbanking, and wallets are all supported. Your plan
+                    upgrades instantly after payment, and renews monthly. Cancel anytime.
+                  </p>
                 </div>
 
                 <button
                   onClick={handleConfirmPayment}
                   disabled={isProcessingCheckout}
-                  className="w-full rounded-lg bg-primary text-black font-bold text-sm py-3 hover:bg-primary/90 transition-colors pt-3"
+                  className="w-full rounded-lg bg-primary text-black font-bold text-sm py-3 hover:bg-primary/90 transition-colors pt-3 disabled:opacity-60"
                 >
-                  {isProcessingCheckout ? "Processing checkout..." : "Confirm & Pay $29.00"}
+                  {isProcessingCheckout ? "Opening secure checkout..." : "Pay ₹2,499 with Razorpay"}
                 </button>
               </div>
             )}
