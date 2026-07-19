@@ -638,29 +638,48 @@ export default function BillingPage() {
               </div>
             ) : (
               <div className="space-y-4">
-                <div className="rounded-lg bg-muted/20 p-3 text-xs flex justify-between items-center">
-                  <div>
-                    <p className="font-semibold text-white">Axon Pro Subscription</p>
-                    <p className="text-muted-foreground">50,000 monthly validations</p>
+                {/* Bill summary, OpenAI-style */}
+                <div className="rounded-lg border border-border/50 bg-[#0c0c0c] overflow-hidden text-xs">
+                  <div className="flex justify-between items-center px-4 py-2.5 border-b border-border/40 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
+                    <span>Description</span>
+                    <span>Amount</span>
                   </div>
-                  <span className="text-base font-bold text-white">₹2,999/mo</span>
+                  <div className="flex justify-between items-center px-4 py-3 border-b border-border/40">
+                    <div>
+                      <p className="font-semibold text-white">Axon Pro Subscription</p>
+                      <p className="text-muted-foreground">50,000 validations / month</p>
+                    </div>
+                    <span className="text-sm font-bold text-white">$29.00</span>
+                  </div>
+                  <div className="px-4 py-3 space-y-1.5 border-b border-border/40">
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Billed in INR (approx. ₹100 / $1)</span>
+                      <span>₹2,900.00</span>
+                    </div>
+                    <div className="flex justify-between text-muted-foreground">
+                      <span>Payment processing &amp; currency buffer</span>
+                      <span>₹99.00</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-between items-center px-4 py-3 bg-muted/10">
+                    <span className="font-semibold text-white">Total, billed monthly</span>
+                    <span className="text-base font-bold text-white">₹2,999.00</span>
+                  </div>
                 </div>
 
-                <div className="rounded-lg border border-border/50 bg-[#0c0c0c] p-4 text-xs text-muted-foreground leading-relaxed space-y-2">
-                  <p className="text-white font-semibold">Secure payment via Razorpay</p>
-                  <p>
-                    You'll complete payment in the Razorpay window — UPI, credit &
-                    debit cards, netbanking, and wallets are all supported. Your plan
-                    upgrades instantly after payment, and renews monthly. Cancel anytime.
-                  </p>
-                </div>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Prices are shown in USD and billed in Indian Rupees via Razorpay
+                  (UPI, cards, netbanking, wallets). The total is inclusive of all
+                  fees — no additional taxes or charges. Your plan upgrades
+                  instantly after payment and renews monthly. Cancel anytime.
+                </p>
 
                 <button
                   onClick={handleConfirmPayment}
                   disabled={isProcessingCheckout}
                   className="w-full rounded-lg bg-primary text-black font-bold text-sm py-3 hover:bg-primary/90 transition-colors pt-3 disabled:opacity-60"
                 >
-                  {isProcessingCheckout ? "Opening secure checkout..." : "Pay ₹2,999 with Razorpay"}
+                  {isProcessingCheckout ? "Opening secure checkout..." : "Confirm payment"}
                 </button>
               </div>
             )}
