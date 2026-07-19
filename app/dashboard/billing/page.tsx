@@ -651,27 +651,17 @@ export default function BillingPage() {
                     </div>
                     <span className="text-sm font-bold text-white">$29.00</span>
                   </div>
-                  <div className="px-4 py-3 space-y-1.5 border-b border-border/40">
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Billed in INR (approx. ₹100 / $1)</span>
-                      <span>₹2,900.00</span>
-                    </div>
-                    <div className="flex justify-between text-muted-foreground">
-                      <span>Payment processing &amp; currency buffer</span>
-                      <span>₹99.00</span>
-                    </div>
-                  </div>
                   <div className="flex justify-between items-center px-4 py-3 bg-muted/10">
                     <span className="font-semibold text-white">Total, billed monthly</span>
-                    <span className="text-base font-bold text-white">₹2,999.00</span>
+                    <span className="text-base font-bold text-white">$29.00</span>
                   </div>
                 </div>
 
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
-                  Prices are shown in USD and billed in Indian Rupees via Razorpay
-                  (UPI, cards, netbanking, wallets). The total is inclusive of all
-                  fees — no additional taxes or charges. Your plan upgrades
-                  instantly after payment and renews monthly. Cancel anytime.
+                  Inclusive of all fees — no additional taxes or charges. Payment is
+                  processed securely by Razorpay (UPI, cards, netbanking, wallets);
+                  the charge is made in your local currency at checkout. Your plan
+                  upgrades instantly after payment and renews monthly. Cancel anytime.
                 </p>
 
                 <button
