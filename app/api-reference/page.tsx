@@ -47,7 +47,7 @@ const getLogsResponse = `[
 
 const getUsageResponse = `{
   "monthly_requests": 4821,
-  "request_limit": 10000,
+  "request_limit": 50000,
   "plan": "pro"
 }`;
 

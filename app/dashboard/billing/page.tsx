@@ -297,7 +297,7 @@ export default function BillingPage() {
               <ul className="text-xs text-muted-foreground space-y-2.5 pt-2">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0" />
-                  10,000 validations per month
+                  50,000 validations per month
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary shrink-0" />
@@ -594,7 +594,7 @@ export default function BillingPage() {
                 <div className="rounded-lg bg-muted/20 p-3 text-xs flex justify-between items-center">
                   <div>
                     <p className="font-semibold text-white">Axon Pro Subscription</p>
-                    <p className="text-muted-foreground">10,000 monthly validations</p>
+                    <p className="text-muted-foreground">50,000 monthly validations</p>
                   </div>
                   <span className="text-base font-bold text-white">$29.00/mo</span>
                 </div>

@@ -197,7 +197,7 @@ export default function ApiKeysPage() {
               Quick Integration
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Axon validates agent outputs via standard HTTP header validation. Send your secret token inside the <code className="text-primary font-mono">Authorization</code> field.
+              Axon validates agent outputs via standard HTTP header validation. Send your secret API key inside the <code className="text-primary font-mono">Authorization</code> field.
             </p>
 
             <div className="space-y-1.5 pt-2">

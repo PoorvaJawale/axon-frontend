@@ -25,7 +25,7 @@ const plans = [
     period: "/month",
     description: "For growing teams and production workloads",
     features: [
-      "10,000 validations/month",
+      "50,000 validations/month",
       "Semantic judge model",
       "Real-time alerts",
       "Priority support",
