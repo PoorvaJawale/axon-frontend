@@ -27,14 +27,20 @@ export async function POST(req: NextRequest) {
   const meta = (user.privateMetadata ?? {}) as Record<string, unknown>;
 
   let force = false;
+  let keyName: string | undefined;
   try {
     const body = await req.json();
     force = body?.force === true;
+    if (typeof body?.name === "string" && body.name.trim()) {
+      keyName = body.name.trim().slice(0, 60);
+    }
   } catch {
     // no body — plain provisioning call
   }
 
-  if (meta.axonApiKey && !force) {
+  // Auto-provision call with an existing key: nothing to do.
+  // Explicitly named creations and forced regenerations always mint a new key.
+  if (meta.axonApiKey && !force && !keyName) {
     return NextResponse.json({
       alreadyProvisioned: true,
       keyPrefix: meta.axonKeyPrefix ?? null,
@@ -56,7 +62,7 @@ export async function POST(req: NextRequest) {
       user_id: userId,
       email,
       user_name: fullName,
-      name: force ? "Regenerated key" : "Default key",
+      name: keyName ?? (force ? "Regenerated key" : "Default key"),
       plan: (meta.axonPlan as string) ?? "free",
     }),
     cache: "no-store",
