@@ -203,10 +203,10 @@ export default function BillingPage() {
 
   // Static Mock Payment History
   const mockInvoices = [
-    { id: "inv-001", date: "2026-06-01", amount: "$29.00", status: "PAID" },
-    { id: "inv-002", date: "2026-05-01", amount: "$29.00", status: "PAID" },
-    { id: "inv-003", date: "2026-04-01", amount: "$29.00", status: "PAID" },
-    { id: "inv-004", date: "2026-03-01", amount: "$29.00", status: "FAILED" },
+    { id: "inv-001", date: "2026-06-01", amount: "₹2,999", status: "PAID" },
+    { id: "inv-002", date: "2026-05-01", amount: "₹2,999", status: "PAID" },
+    { id: "inv-003", date: "2026-04-01", amount: "₹2,999", status: "PAID" },
+    { id: "inv-004", date: "2026-03-01", amount: "₹2,999", status: "FAILED" },
   ];
 
   return (
@@ -243,7 +243,7 @@ export default function BillingPage() {
               <div>
                 <p className="text-muted-foreground">Pricing / Period</p>
                 <p className="mt-1.5 text-xl font-bold text-white">
-                  $29.00 <span className="text-xs text-muted-foreground font-normal">/ month</span>
+                  ₹2,999 <span className="text-xs text-muted-foreground font-normal">/ month</span>
                 </p>
               </div>
             )}
@@ -339,7 +339,7 @@ export default function BillingPage() {
               </span>
               <h4 className="text-base font-bold text-white">Pro Plan</h4>
               <p className="text-3xl font-black text-white">
-                $29 <span className="text-xs text-muted-foreground font-normal">/ month</span>
+                ₹2,999 <span className="text-xs text-muted-foreground font-normal">/ month</span>
               </p>
               <ul className="text-xs text-muted-foreground space-y-2.5 pt-2">
                 <li className="flex items-center gap-2">
@@ -649,19 +649,19 @@ export default function BillingPage() {
                       <p className="font-semibold text-white">Axon Pro Subscription</p>
                       <p className="text-muted-foreground">50,000 validations / month</p>
                     </div>
-                    <span className="text-sm font-bold text-white">$29.00</span>
+                    <span className="text-sm font-bold text-white">₹2,999</span>
                   </div>
                   <div className="flex justify-between items-center px-4 py-3 bg-muted/10">
                     <span className="font-semibold text-white">Total, billed monthly</span>
-                    <span className="text-base font-bold text-white">$29.00</span>
+                    <span className="text-base font-bold text-white">₹2,999</span>
                   </div>
                 </div>
 
                 <p className="text-[11px] text-muted-foreground leading-relaxed">
                   Inclusive of all fees — no additional taxes or charges. Payment is
-                  processed securely by Razorpay (UPI, cards, netbanking, wallets);
-                  the charge is made in your local currency at checkout. Your plan
-                  upgrades instantly after payment and renews monthly. Cancel anytime.
+                  processed securely by Razorpay (UPI, cards, netbanking, wallets).
+                  Your plan upgrades instantly after payment and renews monthly.
+                  Cancel anytime.
                 </p>
 
                 <button

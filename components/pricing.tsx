@@ -7,7 +7,7 @@ import { useAuth } from "@clerk/nextjs";
 const plans = [
   {
     name: "Free",
-    price: "$0",
+    price: "₹0",
     period: "forever",
     description: "Perfect for testing and small projects",
     features: [
@@ -21,7 +21,7 @@ const plans = [
   },
   {
     name: "Pro",
-    price: "$29",
+    price: "₹2,999",
     period: "/month",
     description: "For growing teams and production workloads",
     features: [
