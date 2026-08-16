@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useUser, UserButton } from "@clerk/nextjs";
 
 export function Header() {
+  const { isSignedIn, isLoaded } = useUser();
+
   return (
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-6">
@@ -14,6 +19,7 @@ export function Header() {
             className="h-[110px] w-auto -my-5"
           />
         </Link>
+
         <nav className="hidden items-center gap-8 md:flex">
           <Link
             href="/#features"
@@ -34,19 +40,37 @@ export function Header() {
             Docs
           </Link>
         </nav>
+
         <div className="flex items-center gap-4">
-          <Link
-            href="/sign-in"
-            className="text-sm font-medium text-foreground transition-colors hover:text-primary"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/dashboard"
-            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Get API Key
-          </Link>
+          {/* Nothing until Clerk resolves, to avoid a flash of the wrong buttons */}
+          {!isLoaded ? (
+            <div className="h-9 w-24" />
+          ) : isSignedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium text-foreground transition-colors hover:text-primary"
+              >
+                Dashboard
+              </Link>
+              <UserButton />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm font-medium text-foreground transition-colors hover:text-primary"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/sign-up"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
