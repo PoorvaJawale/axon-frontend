@@ -141,7 +141,7 @@ export default function ApiReferencePage() {
       <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#22c55e]/3 blur-[120px]" />
+          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#37e39b]/3 blur-[120px]" />
         </div>
 
         <div className="mx-auto max-w-6xl">
@@ -215,7 +215,7 @@ export default function ApiReferencePage() {
                     <span className="rounded bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary font-mono">
                       POST
                     </span>
-                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#0a0a0a] px-2 py-0.5 rounded border border-border">
+                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#070908] px-2 py-0.5 rounded border border-border">
                       /webhook/validate-agent-output
                     </code>
                   </div>
@@ -259,10 +259,10 @@ export default function ApiReferencePage() {
                 <div>
                   <h2 className="text-lg font-bold text-white">Get Logs</h2>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="rounded bg-[#0a0a0a] border border-border px-2 py-0.5 text-[10px] font-bold text-white font-mono">
+                    <span className="rounded bg-[#070908] border border-border px-2 py-0.5 text-[10px] font-bold text-white font-mono">
                       GET
                     </span>
-                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#0a0a0a] px-2 py-0.5 rounded border border-border">
+                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#070908] px-2 py-0.5 rounded border border-border">
                       /webhook/logs
                     </code>
                   </div>
@@ -283,10 +283,10 @@ export default function ApiReferencePage() {
                 <div>
                   <h2 className="text-lg font-bold text-white">Get Alerts</h2>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="rounded bg-[#0a0a0a] border border-border px-2 py-0.5 text-[10px] font-bold text-white font-mono">
+                    <span className="rounded bg-[#070908] border border-border px-2 py-0.5 text-[10px] font-bold text-white font-mono">
                       GET
                     </span>
-                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#0a0a0a] px-2 py-0.5 rounded border border-border">
+                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#070908] px-2 py-0.5 rounded border border-border">
                       /webhook/alerts
                     </code>
                   </div>
@@ -301,10 +301,10 @@ export default function ApiReferencePage() {
                 <div>
                   <h2 className="text-lg font-bold text-white">Get Usage</h2>
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="rounded bg-[#0a0a0a] border border-border px-2 py-0.5 text-[10px] font-bold text-white font-mono">
+                    <span className="rounded bg-[#070908] border border-border px-2 py-0.5 text-[10px] font-bold text-white font-mono">
                       GET
                     </span>
-                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#0a0a0a] px-2 py-0.5 rounded border border-border">
+                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#070908] px-2 py-0.5 rounded border border-border">
                       /webhook/usage
                     </code>
                   </div>
@@ -328,7 +328,7 @@ export default function ApiReferencePage() {
                     <span className="rounded bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-bold text-primary font-mono">
                       POST
                     </span>
-                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#0a0a0a] px-2 py-0.5 rounded border border-border">
+                    <code className="text-xs font-mono text-muted-foreground select-all bg-[#070908] px-2 py-0.5 rounded border border-border">
                       /webhook/create-api-key
                     </code>
                   </div>
@@ -359,7 +359,7 @@ export default function ApiReferencePage() {
                   Axon API triggers HTTP error status indicators alongside payload messages if requests cannot be validated successfully.
                 </p>
 
-                <div className="overflow-hidden rounded-xl border border-border/50 bg-[#111111]/30 backdrop-blur-sm">
+                <div className="overflow-hidden rounded-xl border border-border/50 bg-[#0a0d0c]/30 backdrop-blur-sm">
                   <div className="overflow-x-auto">
                     <table className="w-full border-collapse text-left text-xs">
                       <thead>
@@ -435,7 +435,7 @@ function CodeBlock({ code, language, filename }: CodeBlockProps) {
         )}
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 rounded-md border border-border/50 bg-[#111111] px-2 py-1 text-xs text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer"
+          className="flex items-center gap-1.5 rounded-md border border-border/50 bg-[#0a0d0c] px-2 py-1 text-xs text-muted-foreground transition-all hover:bg-muted hover:text-foreground cursor-pointer"
         >
           {copied ? (
             <>
@@ -450,7 +450,7 @@ function CodeBlock({ code, language, filename }: CodeBlockProps) {
           )}
         </button>
       </div>
-      <pre className="overflow-x-auto p-5 font-mono text-[12px] leading-relaxed bg-[#0a0a0a]">
+      <pre className="overflow-x-auto p-5 font-mono text-[12px] leading-relaxed bg-[#070908]">
         <code className="text-muted-foreground block">
           {code.split("\n").map((line, i) => (
             <span key={i} className="block min-h-[1.5rem] hover:bg-muted/5 rounded px-1 -mx-1 transition-colors">

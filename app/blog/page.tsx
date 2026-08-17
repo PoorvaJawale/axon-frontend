@@ -31,7 +31,7 @@ export default function BlogIndexPage() {
       <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-[#22c55e]/3 blur-[100px]" />
+          <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-[#37e39b]/3 blur-[100px]" />
         </div>
 
         <div className="mx-auto max-w-4xl">
@@ -62,11 +62,11 @@ export default function BlogIndexPage() {
             {blogPosts.map((post) => (
               <div
                 key={post.slug}
-                className="flex flex-col justify-between rounded-xl border border-border bg-[#111111]/30 p-6 backdrop-blur-sm relative overflow-hidden transition-all duration-300 hover:border-border/80 hover:bg-[#111111]/50 group"
+                className="flex flex-col justify-between rounded-xl border border-border bg-[#0a0d0c]/30 p-6 backdrop-blur-sm relative overflow-hidden transition-all duration-300 hover:border-border/80 hover:bg-[#0a0d0c]/50 group"
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="inline-flex items-center rounded-full bg-[#22c55e]/10 border border-[#22c55e]/20 px-2.5 py-0.5 text-[10px] font-bold text-primary">
+                    <span className="inline-flex items-center rounded-full bg-[#37e39b]/10 border border-[#37e39b]/20 px-2.5 py-0.5 text-[10px] font-bold text-primary">
                       {post.tag}
                     </span>
                     <span className="flex items-center gap-1 text-[11px] text-muted-foreground font-mono">
@@ -75,7 +75,7 @@ export default function BlogIndexPage() {
                     </span>
                   </div>
 
-                  <h2 className="text-lg font-bold text-white mb-2 leading-snug group-hover:text-[#22c55e] transition-colors">
+                  <h2 className="text-lg font-bold text-white mb-2 leading-snug group-hover:text-[#37e39b] transition-colors">
                     {post.title}
                   </h2>
                   <p className="text-xs text-muted-foreground leading-relaxed mb-6">
@@ -86,7 +86,7 @@ export default function BlogIndexPage() {
                 <div className="pt-4 border-t border-border/40">
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#22c55e] hover:text-[#22c55e]/80 transition-colors"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#37e39b] hover:text-[#37e39b]/80 transition-colors"
                   >
                     Read More
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />

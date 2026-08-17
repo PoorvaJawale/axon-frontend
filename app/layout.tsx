@@ -31,7 +31,7 @@ export default function RootLayout({
       afterSignOutUrl="/"
       appearance={{
         baseTheme: dark,
-        variables: { colorPrimary: "#22c55e" },
+        variables: { colorPrimary: "#37e39b" },
       }}
     >
       <html

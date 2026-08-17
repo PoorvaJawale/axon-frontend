@@ -1,149 +1,88 @@
 "use client";
 
 import React from "react";
-import Link from "next/link";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { ArrowLeft, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
+import { CircleCheckBig } from "lucide-react";
+
+const mono = "var(--font-geist-mono)";
+const line = "1px solid rgba(140,255,190,.1)";
+const panel = "#0a0d0c";
 
 const services = [
-  { name: "Validation API", status: "Operational", uptime: "99.9%", color: "text-[#22c55e]" },
-  { name: "Schema Validator", status: "Operational", uptime: "99.9%", color: "text-[#22c55e]" },
-  { name: "Semantic Judge", status: "Operational", uptime: "99.8%", color: "text-[#22c55e]" },
-  { name: "Dashboard", status: "Operational", uptime: "99.9%", color: "text-[#22c55e]" },
-  { name: "Database", status: "Operational", uptime: "99.9%", color: "text-[#22c55e]" },
-  { name: "Background Validator", status: "Operational", uptime: "99.7%", color: "text-[#22c55e]" },
+  { name: "Validation API", uptime: "99.9%", flag: -1 },
+  { name: "Schema validator", uptime: "99.9%", flag: -1 },
+  { name: "Semantic judge", uptime: "99.8%", flag: 5 },
+  { name: "Dashboard", uptime: "99.9%", flag: -1 },
+  { name: "Background validator", uptime: "99.7%", flag: 2 },
 ];
 
-const incidents = [
-  {
-    date: "June 1, 2026",
-    title: "Elevated latency on semantic judge",
-    status: "Resolved",
-    description: "Brief latency spike on the semantic validation layer lasting 12 minutes. Root cause identified and resolved.",
-    severity: "low",
-  },
-];
+function UptimeBars({ flag }: { flag: number }) {
+  return (
+    <span style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 20 }}>
+      {Array.from({ length: 12 }).map((_, i) => (
+        <span key={i} style={{ flex: 1, height: "100%", background: i === flag ? "#ffb347" : "#37e39b", borderRadius: 1 }} />
+      ))}
+    </span>
+  );
+}
 
 export default function StatusPage() {
   return (
-    <div className="flex min-h-screen flex-col bg-[#000000] text-[#ffffff]">
+    <div className="flex min-h-screen flex-col" style={{ background: "#070908" }}>
       <Header />
-
-      <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
-        {/* Background glow */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#22c55e]/5 blur-[100px]" />
-        </div>
-
-        <div className="mx-auto max-w-4xl space-y-8">
-          {/* Back Button */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-white transition-colors mb-2 cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-
+      <main style={{ flex: 1, animation: "axRise .35s ease both" }}>
+        <div style={{ maxWidth: 880, margin: "0 auto", padding: "120px 30px 90px", display: "flex", flexDirection: "column", gap: 26 }}>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              System Status
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Real-time status of Axon services and incident logs.
-            </p>
+            <h1 style={{ margin: 0, font: "700 38px/1.08 var(--font-geist-sans)", letterSpacing: "-.04em" }}>System status</h1>
+            <p style={{ margin: "10px 0 0", font: "400 14px/1.5 var(--font-geist-sans)", color: "#8b9a93" }}>Live health of every Axon service.</p>
           </div>
 
-          {/* Operational Banner */}
-          <div className="rounded-xl border border-[#22c55e]/30 bg-[#22c55e]/10 p-5 flex items-center gap-4">
-            <CheckCircle2 className="h-6 w-6 text-[#22c55e] shrink-0" />
-            <div>
-              <p className="text-sm font-bold text-[#22c55e] uppercase tracking-wider">
-                All Systems Operational
-              </p>
-              <p className="text-xs text-emerald-400/80 mt-0.5">
-                All validation middleware services are performing normally.
-              </p>
+          {/* Operational banner */}
+          <div style={{ display: "flex", alignItems: "center", gap: 15, border: "1px solid rgba(55,227,155,.3)", borderRadius: 14, background: "linear-gradient(180deg,rgba(55,227,155,.1),rgba(55,227,155,.04))", padding: "20px 22px" }}>
+            <div style={{ width: 38, height: 38, flex: "none", borderRadius: 11, background: "rgba(55,227,155,.15)", display: "flex", alignItems: "center", justifyContent: "center", color: "#37e39b" }}>
+              <CircleCheckBig style={{ width: 20, height: 20 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div className="ax-mono" style={{ font: `700 13px/1 ${mono}`, letterSpacing: ".12em", color: "#37e39b" }}>ALL SYSTEMS OPERATIONAL</div>
+              <div style={{ marginTop: 7, font: "400 12.5px/1 var(--font-geist-sans)", color: "#8b9a93" }}>No incidents in the last 30 days.</div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ font: "700 20px/1 var(--font-geist-sans)", letterSpacing: "-.02em" }}>99.9%</div>
+              <div className="ax-mono" style={{ marginTop: 5, font: `500 9.5px/1 ${mono}`, letterSpacing: ".12em", color: "#5b6b64" }}>90-DAY UPTIME</div>
             </div>
           </div>
 
-          {/* Services Table */}
-          <div className="rounded-xl border border-border bg-[#111111]/30 overflow-hidden shadow-2xl">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-border/50 bg-muted/20">
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider text-muted-foreground">
-                      Service Name
-                    </th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider text-muted-foreground">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 font-semibold uppercase tracking-wider text-muted-foreground">
-                      Uptime
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40">
-                  {services.map((svc) => (
-                    <tr key={svc.name} className="transition-colors hover:bg-muted/5">
-                      <td className="px-6 py-4 font-semibold text-white">
-                        {svc.name}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="flex items-center gap-1.5 font-medium text-foreground">
-                          <span className="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse" />
-                          {svc.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 font-mono text-muted-foreground">
-                        {svc.uptime}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          {/* Services table */}
+          <div style={{ border: line, borderRadius: 14, background: panel, overflow: "hidden" }}>
+            <div className="ax-mono" style={{ display: "grid", gridTemplateColumns: "1fr 190px 80px", padding: "11px 20px", borderBottom: line, background: "#0d100f", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#46534d" }}>
+              <span>SERVICE</span><span>LAST 90 DAYS</span><span style={{ textAlign: "right" }}>UPTIME</span>
             </div>
+            {services.map((s, i) => (
+              <div key={s.name} style={{ display: "grid", gridTemplateColumns: "1fr 190px 80px", padding: "15px 20px", borderBottom: i < services.length - 1 ? "1px solid rgba(140,255,190,.05)" : "none", alignItems: "center" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 9, font: "600 13px/1 var(--font-geist-sans)" }}>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#37e39b", animation: `axPulse 2.2s ease-in-out ${i * 0.3}s infinite` }} />{s.name}
+                </span>
+                <UptimeBars flag={s.flag} />
+                <span className="ax-mono" style={{ textAlign: "right", font: `500 12px/1 ${mono}`, color: "#8b9a93" }}>{s.uptime}</span>
+              </div>
+            ))}
           </div>
 
-          {/* Incident History */}
-          <div className="space-y-4 pt-6 border-t border-border/30">
-            <h2 className="text-lg font-bold text-white">Past Incidents</h2>
-            
-            <div className="space-y-4">
-              {incidents.map((incident, idx) => (
-                <div
-                  key={idx}
-                  className="rounded-xl border border-border bg-[#111111]/20 p-5 space-y-3 relative overflow-hidden"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xs font-semibold text-muted-foreground">
-                        {incident.date}
-                      </span>
-                      <span className="h-1.5 w-1.5 rounded-full bg-border" />
-                      <span className="inline-flex items-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2 py-0.2 text-[9px] font-bold text-emerald-400">
-                        {incident.status}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-white leading-tight">
-                      {incident.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      {incident.description}
-                    </p>
-                  </div>
-                </div>
-              ))}
+          {/* Past incidents */}
+          <div>
+            <h2 style={{ margin: 0, font: "700 16px/1 var(--font-geist-sans)" }}>Past incidents</h2>
+            <div style={{ marginTop: 14, border: line, borderRadius: 14, background: panel, padding: "18px 20px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span className="ax-mono" style={{ font: `700 9px/1 ${mono}`, letterSpacing: ".14em", color: "#37e39b", border: "1px solid rgba(55,227,155,.28)", borderRadius: 5, padding: "5px 7px" }}>RESOLVED</span>
+                <span className="ax-mono" style={{ font: `500 11px/1 ${mono}`, color: "#5b6b64" }}>June 1, 2026 · 12 min</span>
+              </div>
+              <h3 style={{ margin: "13px 0 0", font: "700 14.5px/1.3 var(--font-geist-sans)" }}>Elevated latency on semantic judge</h3>
+              <p style={{ margin: "8px 0 0", maxWidth: 600, font: "400 12.5px/1.6 var(--font-geist-sans)", color: "#8b9a93" }}>Brief latency spike on the semantic validation layer lasting 12 minutes. Root cause identified and resolved. No validations were incorrectly passed.</p>
             </div>
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

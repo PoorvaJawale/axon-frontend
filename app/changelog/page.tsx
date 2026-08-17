@@ -11,7 +11,7 @@ const changelogEntries = [
     version: "v1.0.0",
     date: "June 2026",
     badge: "Latest",
-    badgeColor: "bg-[#22c55e]/10 border-[#22c55e]/25 text-[#22c55e]",
+    badgeColor: "bg-[#37e39b]/10 border-[#37e39b]/25 text-[#37e39b]",
     title: "Public Beta Launch",
     icon: Sparkles,
     changes: [
@@ -65,7 +65,7 @@ export default function ChangelogPage() {
       <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-[#22c55e]/3 blur-[100px]" />
+          <div className="absolute left-1/4 top-1/4 h-[400px] w-[400px] rounded-full bg-[#37e39b]/3 blur-[100px]" />
         </div>
 
         <div className="mx-auto max-w-4xl">
@@ -92,7 +92,7 @@ export default function ChangelogPage() {
             {changelogEntries.map((entry) => (
               <div
                 key={entry.version}
-                className="rounded-xl border border-border bg-[#111111]/30 p-6 md:p-8 backdrop-blur-sm relative overflow-hidden transition-all duration-300 hover:border-border/80"
+                className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 backdrop-blur-sm relative overflow-hidden transition-all duration-300 hover:border-border/80"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-4 mb-6">
                   <div className="flex items-center gap-3">

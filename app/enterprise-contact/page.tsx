@@ -114,7 +114,7 @@ export default function EnterpriseContactPage() {
       <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#22c55e]/5 blur-[100px]" />
+          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#37e39b]/5 blur-[100px]" />
         </div>
 
         <div className="mx-auto max-w-4xl">
@@ -129,8 +129,8 @@ export default function EnterpriseContactPage() {
 
           {isSuccess ? (
             /* Confirmation card */
-            <div className="rounded-xl border border-border bg-[#111111] p-8 md:p-12 text-center max-w-2xl mx-auto shadow-2xl space-y-6">
-              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#22c55e]/10 border border-[#22c55e]/20 text-[#22c55e]">
+            <div className="rounded-xl border border-border bg-[#0a0d0c] p-8 md:p-12 text-center max-w-2xl mx-auto shadow-2xl space-y-6">
+              <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#37e39b]/10 border border-[#37e39b]/20 text-[#37e39b]">
                 <CheckCircle2 className="h-10 w-10" />
               </div>
               <div className="space-y-2">
@@ -144,7 +144,7 @@ export default function EnterpriseContactPage() {
               <div className="pt-4">
                 <Link
                   href="/"
-                  className="inline-flex items-center justify-center rounded-lg bg-[#22c55e] px-6 py-2.5 text-sm font-semibold text-[#000000] transition-colors hover:bg-[#22c55e]/90 w-full sm:w-auto"
+                  className="inline-flex items-center justify-center rounded-lg bg-[#37e39b] px-6 py-2.5 text-sm font-semibold text-[#000000] transition-colors hover:bg-[#37e39b]/90 w-full sm:w-auto"
                 >
                   Back to Home
                 </Link>
@@ -162,7 +162,7 @@ export default function EnterpriseContactPage() {
                 </p>
               </div>
 
-              <div className="rounded-xl border border-border bg-[#111111] p-6 md:p-8 shadow-2xl">
+              <div className="rounded-xl border border-border bg-[#0a0d0c] p-6 md:p-8 shadow-2xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="grid gap-6 md:grid-cols-2">
                     {/* Full Name */}
@@ -180,7 +180,7 @@ export default function EnterpriseContactPage() {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="Jane Smith"
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b]"
                       />
                     </div>
 
@@ -199,7 +199,7 @@ export default function EnterpriseContactPage() {
                         value={workEmail}
                         onChange={(e) => setWorkEmail(e.target.value)}
                         placeholder="jane@company.com"
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b]"
                       />
                     </div>
 
@@ -218,7 +218,7 @@ export default function EnterpriseContactPage() {
                         value={companyName}
                         onChange={(e) => setCompanyName(e.target.value)}
                         placeholder="Acme Corp"
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b]"
                       />
                     </div>
 
@@ -236,7 +236,7 @@ export default function EnterpriseContactPage() {
                         value={jobTitle}
                         onChange={(e) => setJobTitle(e.target.value)}
                         placeholder="Lead AI Architect"
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b]"
                       />
                     </div>
 
@@ -253,7 +253,7 @@ export default function EnterpriseContactPage() {
                         required
                         value={agentsCount}
                         onChange={(e) => setAgentsCount(e.target.value)}
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#37e39b]"
                       >
                         <option value="" disabled>Select agent count...</option>
                         <option value="1 to 10">1 to 10</option>
@@ -276,7 +276,7 @@ export default function EnterpriseContactPage() {
                         required
                         value={monthlyVolume}
                         onChange={(e) => setMonthlyVolume(e.target.value)}
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#37e39b]"
                       >
                         <option value="" disabled>Select monthly volume...</option>
                         <option value="Under 10,000">Under 10,000</option>
@@ -298,7 +298,7 @@ export default function EnterpriseContactPage() {
                         id="heardFrom"
                         value={heardFrom}
                         onChange={(e) => setHeardFrom(e.target.value)}
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#22c55e]"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#37e39b]"
                       >
                         <option value="">Select an option...</option>
                         <option value="Google">Google</option>
@@ -326,13 +326,13 @@ export default function EnterpriseContactPage() {
                         ].map((item) => (
                           <label
                             key={item.key}
-                            className="flex items-center gap-2.5 rounded-lg border border-border bg-[#0a0a0a] px-3.5 py-3.5 cursor-pointer select-none transition-colors hover:border-[#22c55e]/50"
+                            className="flex items-center gap-2.5 rounded-lg border border-border bg-[#070908] px-3.5 py-3.5 cursor-pointer select-none transition-colors hover:border-[#37e39b]/50"
                           >
                             <input
                               type="checkbox"
                               checked={systems[item.key as keyof typeof systems]}
                               onChange={() => handleSystemChange(item.key as keyof typeof systems)}
-                              className="rounded border-[#1f2937] text-[#22c55e] focus:ring-0 h-4 w-4 bg-[#0a0a0a] cursor-pointer"
+                              className="rounded border-[#1f2937] text-[#37e39b] focus:ring-0 h-4 w-4 bg-[#070908] cursor-pointer"
                             />
                             <span className="text-muted-foreground font-medium">{item.label}</span>
                           </label>
@@ -349,11 +349,11 @@ export default function EnterpriseContactPage() {
                         type="button"
                         onClick={() => setOnPremise(!onPremise)}
                         className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                          onPremise ? "bg-[#22c55e]" : "bg-secondary"
+                          onPremise ? "bg-[#37e39b]" : "bg-secondary"
                         }`}
                       >
                         <span
-                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-[#111111] shadow ring-0 transition duration-200 ease-in-out ${
+                          className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-[#0a0d0c] shadow ring-0 transition duration-200 ease-in-out ${
                             onPremise ? "translate-x-5" : "translate-x-0"
                           }`}
                         />
@@ -376,7 +376,7 @@ export default function EnterpriseContactPage() {
                         onChange={(e) => setUseCase(e.target.value)}
                         placeholder="Describe what your agents do and what problems you are facing with AI output reliability..."
                         rows={5}
-                        className="w-full rounded-lg border border-[#1f2937] bg-[#0a0a0a] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e] leading-relaxed"
+                        className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none transition-all focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b] leading-relaxed"
                       />
                     </div>
                   </div>
@@ -386,7 +386,7 @@ export default function EnterpriseContactPage() {
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full rounded-lg bg-[#22c55e] py-3 text-sm font-semibold text-[#000000] transition-colors hover:bg-[#22c55e]/90 focus:outline-none focus:ring-2 focus:ring-[#22c55e] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="w-full rounded-lg bg-[#37e39b] py-3 text-sm font-semibold text-[#000000] transition-colors hover:bg-[#37e39b]/90 focus:outline-none focus:ring-2 focus:ring-[#37e39b] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {isLoading ? "Sending Inquiry..." : "Send to Sales Team"}
                     </button>

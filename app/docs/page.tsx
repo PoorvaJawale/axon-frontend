@@ -445,7 +445,7 @@ function CodeBlock({ code, language, filename }: CodeBlockProps) {
           )}
         </button>
       </div>
-      <pre className="overflow-x-auto p-5 font-mono text-sm leading-relaxed bg-[#0c0c0c]">
+      <pre className="overflow-x-auto p-5 font-mono text-sm leading-relaxed bg-[#080b0a]">
         <code className="text-muted-foreground block">
           {code.split("\n").map((line, i) => (
             <span key={i} className="block min-h-[1.5rem] hover:bg-muted/5 rounded px-1 -mx-1 transition-colors">

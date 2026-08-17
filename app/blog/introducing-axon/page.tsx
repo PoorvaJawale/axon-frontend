@@ -14,7 +14,7 @@ export default function IntroducingAxonPage() {
       <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#22c55e]/5 blur-[100px]" />
+          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#37e39b]/5 blur-[100px]" />
         </div>
 
         <div className="mx-auto max-w-3xl">
@@ -31,7 +31,7 @@ export default function IntroducingAxonPage() {
           <article className="space-y-6">
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground font-mono">
-                <span className="inline-flex items-center rounded-full bg-[#22c55e]/10 border border-[#22c55e]/20 px-2.5 py-0.5 font-semibold text-primary">
+                <span className="inline-flex items-center rounded-full bg-[#37e39b]/10 border border-[#37e39b]/20 px-2.5 py-0.5 font-semibold text-primary">
                   Product
                 </span>
                 <span className="flex items-center gap-1">
@@ -88,7 +88,7 @@ export default function IntroducingAxonPage() {
 
               <p className="pt-4 border-t border-border/40">
                 For partnerships, enterprise features, or queries, please reach out to us at{" "}
-                <a href="mailto:axonapiai@gmail.com" className="text-[#22c55e] hover:underline">
+                <a href="mailto:axonapiai@gmail.com" className="text-[#37e39b] hover:underline">
                   axonapiai@gmail.com
                 </a>
                 .

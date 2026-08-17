@@ -14,7 +14,7 @@ export default function AboutPage() {
       <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#22c55e]/5 blur-[100px]" />
+          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#37e39b]/5 blur-[100px]" />
         </div>
 
         <div className="mx-auto max-w-3xl space-y-12">
@@ -38,7 +38,7 @@ export default function AboutPage() {
 
           <div className="space-y-10">
             {/* Mission Section */}
-            <section className="rounded-xl border border-border bg-[#111111]/30 p-6 md:p-8 space-y-4">
+            <section className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
               <div className="flex items-center gap-3 text-primary">
                 <Target className="h-5 w-5" />
                 <h2 className="text-lg font-bold text-white">Our Mission</h2>
@@ -49,7 +49,7 @@ export default function AboutPage() {
             </section>
 
             {/* Problem Section */}
-            <section className="rounded-xl border border-border bg-[#111111]/30 p-6 md:p-8 space-y-4">
+            <section className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
               <div className="flex items-center gap-3 text-primary">
                 <ShieldAlert className="h-5 w-5" />
                 <h2 className="text-lg font-bold text-white">The Problem</h2>
@@ -60,7 +60,7 @@ export default function AboutPage() {
             </section>
 
             {/* Contact Section */}
-            <section className="rounded-xl border border-border bg-[#111111]/30 p-6 md:p-8 space-y-4">
+            <section className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
               <div className="flex items-center gap-3 text-primary">
                 <Mail className="h-5 w-5" />
                 <h2 className="text-lg font-bold text-white">Get in Touch</h2>
@@ -72,7 +72,7 @@ export default function AboutPage() {
                 <div className="pt-2">
                   <a
                     href="mailto:axonapiai@gmail.com"
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary hover:bg-muted px-4 py-2.5 text-xs font-semibold text-[#22c55e] hover:text-[#22c55e]/90 transition-colors"
+                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary hover:bg-muted px-4 py-2.5 text-xs font-semibold text-[#37e39b] hover:text-[#37e39b]/90 transition-colors"
                   >
                     axonapiai@gmail.com
                   </a>

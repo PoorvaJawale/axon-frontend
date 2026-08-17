@@ -7,12 +7,12 @@ import { Header } from "@/components/header";
 const clerkAppearance = {
   baseTheme: dark,
   variables: {
-    colorPrimary: "#22c55e",
+    colorPrimary: "#37e39b",
     colorPrimaryForeground: "#000000",
-    colorBackground: "#111111",
+    colorBackground: "#0a0d0c",
     colorForeground: "#ffffff",
     colorMutedForeground: "#9ca3af",
-    colorInput: "#0c0c0c",
+    colorInput: "#080b0a",
     colorInputForeground: "#ffffff",
     colorBorder: "#1f2937",
     colorNeutral: "#ffffff",
@@ -32,7 +32,7 @@ export default function SignUpPage() {
       <div className="flex flex-1 items-center justify-center px-4 pt-32 pb-16 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#22c55e]/5 blur-[80px]" />
+          <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#37e39b]/5 blur-[80px]" />
         </div>
 
         <div className="relative z-10">
