@@ -8,6 +8,7 @@ const isProtectedRoute = createRouteMatcher([
   "/webhook/create-api-key(.*)",
   "/webhook/api-keys(.*)",
   "/webhook/revoke-key(.*)",
+  "/webhook/billing-history(.*)",
   "/webhook/razorpay-subscribe(.*)",
   "/webhook/razorpay-verify(.*)",
   // NOTE: /webhook/razorpay (no suffix) is Razorpay's server-to-server webhook

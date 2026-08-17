@@ -33,6 +33,15 @@ export default function BillingPage() {
   const requestLimit = usageData?.request_limit ?? 1000;
   const usagePercentage = Math.min((monthlyRequests / requestLimit) * 100, 100);
 
+  // Real payment history from Razorpay (empty until the user has paid invoices)
+  const { data: historyData, isLoading: historyLoading } = useSWR(
+    "/webhook/billing-history",
+    fetcher,
+    { revalidateOnFocus: true }
+  );
+  const invoices: { id: string; date: string; amount: string; status: string; url: string | null }[] =
+    historyData?.invoices ?? [];
+
   // Modal states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
@@ -200,14 +209,6 @@ export default function BillingPage() {
       el.scrollIntoView({ behavior: "smooth" });
     }
   };
-
-  // Static Mock Payment History
-  const mockInvoices = [
-    { id: "inv-001", date: "2026-06-01", amount: "₹2,999", status: "PAID" },
-    { id: "inv-002", date: "2026-05-01", amount: "₹2,999", status: "PAID" },
-    { id: "inv-003", date: "2026-04-01", amount: "₹2,999", status: "PAID" },
-    { id: "inv-004", date: "2026-03-01", amount: "₹2,999", status: "FAILED" },
-  ];
 
   return (
     <div className="space-y-8 text-white relative">
@@ -397,7 +398,21 @@ export default function BillingPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/50 text-xs">
-                {mockInvoices.map((inv) => (
+                {historyLoading && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">
+                      Loading payment history...
+                    </td>
+                  </tr>
+                )}
+                {!historyLoading && invoices.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-10 text-center text-muted-foreground">
+                      No payments yet. Your invoices will appear here after your first subscription charge.
+                    </td>
+                  </tr>
+                )}
+                {invoices.map((inv) => (
                   <tr key={inv.id} className="transition-colors hover:bg-muted/10">
                     <td className="px-6 py-4 font-mono text-muted-foreground">{inv.date}</td>
                     <td className="px-6 py-4 text-white font-semibold">{inv.amount}</td>
@@ -407,19 +422,25 @@ export default function BillingPage() {
                           PAID
                         </span>
                       ) : (
-                        <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2 py-0.2 text-[9px] font-bold text-red-400">
-                          FAILED
+                        <span className="inline-flex items-center rounded-full border border-yellow-500/20 bg-yellow-500/10 px-2 py-0.2 text-[9px] font-bold text-yellow-400">
+                          {inv.status}
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <button
-                        onClick={() => alert(`Downloading Invoice ${inv.id}...`)}
-                        className="flex items-center gap-1 font-semibold text-primary hover:text-primary/80 transition-colors"
-                      >
-                        <Download className="h-3.5 w-3.5" />
-                        PDF
-                      </button>
+                      {inv.url ? (
+                        <a
+                          href={inv.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 font-semibold text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <Download className="h-3.5 w-3.5" />
+                          View
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import crypto from "crypto";
 import { setUserPlan } from "@/lib/axon";
 
@@ -55,6 +55,11 @@ export async function POST(req: NextRequest) {
 
   try {
     await setUserPlan(userId, "pro", 50000);
+    // Remember the subscription so we can show real invoice history later.
+    const client = await clerkClient();
+    await client.users.updateUserMetadata(userId, {
+      privateMetadata: { razorpaySubscriptionId: razorpay_subscription_id },
+    });
   } catch (err) {
     console.error("Plan upgrade after payment failed:", err);
     return NextResponse.json(
