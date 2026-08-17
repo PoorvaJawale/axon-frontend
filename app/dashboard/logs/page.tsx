@@ -81,7 +81,7 @@ export default function LogsPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="rounded-xl border border-border/50 bg-[#111111]/30 p-4 space-y-4">
+      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-4 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
           {/* Search Input */}
           <div className="relative lg:col-span-2">
@@ -91,7 +91,7 @@ export default function LogsPage() {
               placeholder="Search by Agent ID or reason..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-border bg-[#0c0c0c] pl-10 pr-3.5 py-2 text-sm text-white placeholder-muted-foreground/60 outline-none transition-colors focus:border-[#22c55e] focus:ring-1 focus:ring-[#22c55e]"
+              className="w-full rounded-lg border border-border bg-[#080b0a] pl-10 pr-3.5 py-2 text-sm text-white placeholder-muted-foreground/60 outline-none transition-colors focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b]"
             />
           </div>
 
@@ -103,7 +103,7 @@ export default function LogsPage() {
                 setResultFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full appearance-none rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-[#22c55e]"
+              className="w-full appearance-none rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-[#37e39b]"
             >
               <option value="All">Result: All</option>
               <option value="PASS">PASS</option>
@@ -121,7 +121,7 @@ export default function LogsPage() {
                 setActionFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              className="w-full appearance-none rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-[#22c55e] capitalize"
+              className="w-full appearance-none rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-[#37e39b] capitalize"
             >
               <option value="All">Action: All</option>
               <option value="email">email</option>
@@ -139,7 +139,7 @@ export default function LogsPage() {
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-lg border border-border bg-[#0c0c0c] px-2 py-1.5 text-xs text-white outline-none focus:border-[#22c55e]"
+              className="w-full rounded-lg border border-border bg-[#080b0a] px-2 py-1.5 text-xs text-white outline-none focus:border-[#37e39b]"
               title="Start Date"
             />
             <span className="text-muted-foreground text-xs">-</span>
@@ -147,7 +147,7 @@ export default function LogsPage() {
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-lg border border-border bg-[#0c0c0c] px-2 py-1.5 text-xs text-white outline-none focus:border-[#22c55e]"
+              className="w-full rounded-lg border border-border bg-[#080b0a] px-2 py-1.5 text-xs text-white outline-none focus:border-[#37e39b]"
               title="End Date"
             />
           </div>
@@ -155,7 +155,7 @@ export default function LogsPage() {
       </div>
 
       {/* Logs Table Container */}
-      <div className="rounded-xl border border-border/50 bg-[#111111]/30 overflow-hidden">
+      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 overflow-hidden">
         <div className="overflow-x-auto">
           {isLoading ? (
             <LogsTableLoader />
@@ -230,7 +230,7 @@ export default function LogsPage() {
                       {/* Expanded Raw Output Row */}
                       {isExpanded && (
                         <tr>
-                          <td colSpan={7} className="px-6 py-4 bg-[#0a0a0a]/50 border-t border-border/30">
+                          <td colSpan={7} className="px-6 py-4 bg-[#080b0a]/50 border-t border-border/30">
                             <div className="space-y-2.5">
                               <div className="flex items-center justify-between text-xs text-muted-foreground">
                                 <span className="font-semibold text-white">RAW AGENT OUTPUT VALIDATED</span>
@@ -251,7 +251,7 @@ export default function LogsPage() {
 
         {/* Pagination Footer */}
         {logs.length > 0 && (
-          <div className="flex items-center justify-between border-t border-border/50 bg-[#111111]/10 px-6 py-4 text-sm">
+          <div className="flex items-center justify-between border-t border-border/50 bg-[#0a0d0c]/10 px-6 py-4 text-sm">
             <span className="text-xs text-muted-foreground">
               Showing <span className="font-semibold text-white">{logs.length}</span> logs of{" "}
               <span className="font-semibold text-white">{pagination.totalCount}</span> total entries
@@ -314,7 +314,7 @@ function ExpandedCodeBlock({ code }: { code: string }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-[#0a0a0a] shadow-inner relative">
+    <div className="overflow-hidden rounded-xl border border-border bg-[#080b0a] shadow-inner relative">
       <div className="flex items-center justify-between border-b border-border/80 px-4 py-2 bg-muted/5">
         <div className="flex items-center gap-1.5">
           <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
@@ -338,7 +338,7 @@ function ExpandedCodeBlock({ code }: { code: string }) {
           )}
         </button>
       </div>
-      <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed bg-[#0c0c0c] text-muted-foreground">
+      <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed bg-[#080b0a] text-muted-foreground">
         <code>{code}</code>
       </pre>
     </div>

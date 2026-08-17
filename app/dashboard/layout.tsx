@@ -86,17 +86,17 @@ export default function DashboardLayout({
   // Prevent layout flicker while redirecting
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#000000] flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#22c55e] border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "#070908" }}>
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-t-transparent" style={{ borderColor: "#37e39b", borderTopColor: "transparent" }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#000000]">
+    <div className="min-h-screen" style={{ background: "#070908" }}>
       <Sidebar />
       <main className="pl-64">
-        <div className="p-8">{children}</div>
+        <div style={{ padding: "28px 26px 60px" }}>{children}</div>
       </main>
       <FreshKeyModal />
     </div>

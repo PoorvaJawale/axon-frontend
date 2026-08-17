@@ -1,325 +1,188 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { useAuth } from "@/app/context/AuthContext";
 import {
   Activity,
-  CheckCircle,
-  XCircle,
+  CircleCheck,
+  CircleX,
   Clock,
   ArrowUpRight,
-  AlertTriangle,
-  Copy,
-  Check,
-  ExternalLink,
+  TriangleAlert,
 } from "lucide-react";
-import { MetricCard, MetricCardSkeleton } from "@/components/dashboard/metric-card";
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const mono = "var(--font-geist-mono)";
+const line = "1px solid rgba(140,255,190,.1)";
+const panel = "#0a0d0c";
+
+type Log = { id: string; time: string; actionType: string; result: "PASS" | "BLOCK" | "ASYNC FLAG"; reason: string };
+type Alert = { id: string; severity: "HIGH" | "MEDIUM" | "LOW"; title: string; agentId: string; description: string; blockedOutput: string; timestamp: string };
 
 export default function DashboardPage() {
-  const { userApiKey } = useAuth();
-  const router = useRouter();
+  const { data: logsData, isLoading: logsLoading } = useSWR("/webhook/logs", fetcher, {
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+  });
+  const { data: alertsData } = useSWR("/webhook/alerts", fetcher, {
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+  });
 
-  // Live data from the Axon backend — the session cookie authenticates the
-  // proxy routes, so no client-side key is needed. Refreshes every 10s.
-  const { data: logsData, error: logsError, isLoading: logsLoading } = useSWR(
-    "/webhook/logs",
-    fetcher,
-    { refreshInterval: 10000, revalidateOnFocus: true }
-  );
-
-  const { data: alertsData, error: alertsError, isLoading: alertsLoading } = useSWR(
-    "/webhook/alerts",
-    fetcher,
-    { refreshInterval: 10000, revalidateOnFocus: true }
-  );
-
-  const logs = logsData?.logs ?? [];
+  const logs: Log[] = logsData?.logs ?? [];
   const stats = logsData?.stats ?? { total: 0, passed: 0, blocked: 0, asyncFlags: 0 };
-  const alerts = alertsData?.alerts ?? [];
-
-  // Filter alerts for the latest unreviewed BLOCK or most recent HIGH/MEDIUM/LOW alert
-  const latestAlert = alerts.length > 0 ? alerts[0] : null;
+  const alerts: Alert[] = alertsData?.alerts ?? [];
+  const latestAlert = alerts[0] ?? null;
+  const passPct = stats.total ? Math.round((stats.passed / stats.total) * 100) : 0;
 
   return (
-    <div className="space-y-6 text-white">
-      {/* Back to Home Page Button */}
-      <button
-        onClick={() => router.push("/")}
-        className="inline-flex items-center gap-2 rounded-lg border border-border/50 bg-[#111111]/30 hover:bg-[#111111]/60 px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-white transition-all cursor-pointer mb-2"
-      >
-        ← Back to Home Page
-      </button>
-
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
+    <div style={{ display: "flex", flexDirection: "column", gap: 22, animation: "axRise .35s ease both" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Monitor your AI validation pipeline in real-time
+          <h1 style={{ margin: 0, font: "700 30px/1.1 var(--font-geist-sans)", letterSpacing: "-.035em" }}>Overview</h1>
+          <p style={{ margin: "8px 0 0", font: "400 13px/1.4 var(--font-geist-sans)", color: "#8b9a93" }}>
+            Every validation decision from the last 24 hours.
           </p>
         </div>
-        <div className="text-xs text-muted-foreground font-mono bg-[#111111] border border-border px-3 py-1.5 rounded-lg select-all">
-          API Key: {userApiKey ? `${userApiKey.substring(0, 14)}••••••••` : "Not Generated"}
-        </div>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 7, border: line, borderRadius: 9, background: "#0d100f", padding: "9px 12px", font: "600 11px/1 var(--font-geist-sans)", color: "#c3cec8" }}>
+          ← Home
+        </Link>
       </div>
 
-      {/* Metrics Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {logsLoading ? (
-          <>
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-            <MetricCardSkeleton />
-          </>
-        ) : (
-          <>
-            <MetricCard
-              title="Total Validations"
-              value={stats.total}
-              icon={Activity}
-            />
-            <MetricCard
-              title="Passed"
-              value={stats.passed}
-              icon={CheckCircle}
-              variant="success"
-            />
-            <MetricCard
-              title="Blocked"
-              value={stats.blocked}
-              icon={XCircle}
-              variant="danger"
-            />
-            <MetricCard
-              title="Async Flags"
-              value={stats.asyncFlags}
-              icon={Clock}
-              variant="warning"
-            />
-          </>
-        )}
+      {/* Stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "rgba(140,255,190,.09)", border: line, borderRadius: 14, overflow: "hidden" }} className="ax-stat-grid">
+        <StatCard label="TOTAL VALIDATIONS" value={stats.total} icon={<Activity style={{ width: 15, height: 15, color: "#5b6b64" }} />} loading={logsLoading}>
+          <MiniBars />
+        </StatCard>
+        <StatCard label="PASSED" value={stats.passed} valueColor="#37e39b" icon={<CircleCheck style={{ width: 15, height: 15, color: "#37e39b" }} />} loading={logsLoading}>
+          <Meter pct={passPct} color="#37e39b" note={`${passPct}% of traffic`} />
+        </StatCard>
+        <StatCard label="BLOCKED" value={stats.blocked} valueColor="#ff5f56" icon={<CircleX style={{ width: 15, height: 15, color: "#ff5f56" }} />} loading={logsLoading}>
+          <Meter pct={stats.total ? (stats.blocked / stats.total) * 100 : 0} color="#ff5f56" note="needs review" />
+        </StatCard>
+        <StatCard label="ASYNC FLAGS" value={stats.asyncFlags} valueColor="#ffb347" icon={<Clock style={{ width: 15, height: 15, color: "#ffb347" }} />} loading={logsLoading}>
+          <Meter pct={stats.total ? (stats.asyncFlags / stats.total) * 100 : 0} color="#ffb347" note="awaiting review" />
+        </StatCard>
       </div>
 
-      {/* Main Content Layout */}
-      <div className="grid gap-8 lg:grid-cols-3">
-        {/* Recent Logs Table */}
-        <div className="lg:col-span-2 overflow-hidden rounded-xl border border-border/50 bg-[#111111]/30 backdrop-blur-sm">
-          <div className="flex items-center justify-between border-b border-border/50 px-6 py-4">
-            <h2 className="text-lg font-semibold text-foreground">Recent Logs</h2>
-            <Link
-              href="/dashboard/logs"
-              className="flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
-            >
-              View all logs
-              <ArrowUpRight className="h-3.5 w-3.5" />
+      {/* Main split */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 18, alignItems: "start" }} className="ax-over-grid">
+        {/* Recent decisions */}
+        <div style={{ border: line, borderRadius: 14, background: panel, overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "15px 20px", borderBottom: line }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <h2 style={{ margin: 0, font: "700 14px/1 var(--font-geist-sans)" }}>Recent decisions</h2>
+              <span className="ax-mono" style={{ display: "flex", alignItems: "center", gap: 5, font: `500 9.5px/1 ${mono}`, color: "#37e39b" }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#37e39b", animation: "axPulse 1.6s ease-in-out infinite" }} />streaming
+              </span>
+            </div>
+            <Link href="/dashboard/logs" className="ax-mono" style={{ display: "flex", alignItems: "center", gap: 5, font: `600 10.5px/1 ${mono}`, color: "#37e39b" }}>
+              VIEW ALL <ArrowUpRight style={{ width: 12, height: 12 }} />
             </Link>
           </div>
-          <div className="overflow-x-auto">
-            {logsLoading ? (
-              <LogsLoader />
-            ) : logs.length === 0 ? (
-              <EmptyState message="No logs received yet." />
-            ) : (
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="border-b border-border/50 bg-muted/5">
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Time
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Action Type
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Result
-                    </th>
-                    <th className="px-6 py-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                      Reason
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {logs.slice(0, 10).map((log: any) => (
-                    <tr
-                      key={log.id}
-                      className="transition-colors hover:bg-muted/10 cursor-pointer"
-                      onClick={() => window.location.href = "/dashboard/logs"}
-                    >
-                      <td className="whitespace-nowrap px-6 py-4 text-xs font-mono text-muted-foreground">
-                        {log.time}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground capitalize">
-                        {log.actionType}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4">
-                        <ResultBadge result={log.result} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-muted-foreground truncate max-w-[200px]" title={log.reason}>
-                        {log.reason}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          <div className="ax-mono" style={{ display: "grid", gridTemplateColumns: "78px 118px 1fr 88px", padding: "10px 20px", borderBottom: "1px solid rgba(140,255,190,.07)", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#46534d" }}>
+            <span>TIME</span><span>ACTION</span><span>REASON</span><span style={{ textAlign: "right" }}>RESULT</span>
           </div>
+          {logsLoading ? (
+            <div style={{ padding: 30, textAlign: "center", color: "#5b6b64", font: "400 12px/1 var(--font-geist-sans)" }}>Loading…</div>
+          ) : logs.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#5b6b64", font: "400 13px/1 var(--font-geist-sans)" }}>No decisions yet.</div>
+          ) : (
+            logs.slice(0, 8).map((log, i) => (
+              <div key={log.id} style={{ display: "grid", gridTemplateColumns: "78px 118px 1fr 88px", padding: "13px 20px", borderBottom: i < 7 ? "1px solid rgba(140,255,190,.05)" : "none", alignItems: "center" }}>
+                <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>{(log.time || "").slice(-8)}</span>
+                <span style={{ font: "500 12px/1 var(--font-geist-sans)", textTransform: "capitalize" }}>{log.actionType}</span>
+                <span style={{ font: "400 12px/1.3 var(--font-geist-sans)", color: "#8b9a93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 10 }}>{log.reason}</span>
+                <span style={{ textAlign: "right" }}><Verdict result={log.result} /></span>
+              </div>
+            ))
+          )}
         </div>
 
-        {/* Right Column: Latest Alert Panel */}
-        <div className="lg:col-span-1">
-          {alertsLoading ? (
-            <AlertCardSkeleton />
-          ) : !latestAlert ? (
-            <div className="rounded-xl border border-border/50 bg-[#111111]/30 p-6 flex flex-col items-center justify-center h-full text-center">
-              <CheckCircle className="h-8 w-8 text-primary mb-3" />
-              <h3 className="text-sm font-semibold text-white">System Secure</h3>
-              <p className="mt-1 text-xs text-muted-foreground">No recent blocks detected.</p>
+        {/* Right: latest block */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {!latestAlert ? (
+            <div style={{ border: line, borderRadius: 14, background: panel, padding: 24, textAlign: "center" }}>
+              <CircleCheck style={{ width: 28, height: 28, color: "#37e39b", margin: "0 auto 10px" }} />
+              <div style={{ font: "700 14px/1 var(--font-geist-sans)" }}>System secure</div>
+              <p style={{ margin: "8px 0 0", font: "400 12px/1.4 var(--font-geist-sans)", color: "#8b9a93" }}>No recent blocks detected.</p>
             </div>
           ) : (
-            <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-6 space-y-4">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2 text-red-400 font-semibold text-sm">
-                  <AlertTriangle className="h-4 w-4 shrink-0" />
-                  Latest Blocked Output
+            <div style={{ border: "1px solid rgba(255,95,86,.28)", borderRadius: 14, background: "linear-gradient(180deg,rgba(255,95,86,.08),#0a0d0c 60%)", padding: 18 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, font: "700 11px/1 var(--font-geist-sans)", color: "#ff5f56" }}>
+                  <TriangleAlert style={{ width: 14, height: 14 }} />Latest block
                 </div>
-                <SeverityBadge severity={latestAlert.severity} />
+                <span className="ax-mono" style={{ font: `700 9px/1 ${mono}`, letterSpacing: ".14em", color: "#ff5f56", border: "1px solid rgba(255,95,86,.35)", borderRadius: 5, padding: "4px 6px" }}>{latestAlert.severity}</span>
               </div>
-
-              <div>
-                <h3 className="text-base font-bold text-white leading-tight">
-                  {latestAlert.title}
-                </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Agent ID: <code className="text-foreground font-mono">{latestAlert.agentId}</code>
-                </p>
-                <p className="mt-2 text-xs text-red-200/80 leading-relaxed">
-                  {latestAlert.description}
-                </p>
+              <h3 style={{ margin: "14px 0 0", font: "700 15px/1.3 var(--font-geist-sans)" }}>{latestAlert.title}</h3>
+              <div className="ax-mono" style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 10, font: `400 10px/1 ${mono}`, color: "#5b6b64" }}>
+                <span>agent: {latestAlert.agentId}</span><span>{latestAlert.timestamp}</span>
               </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>BLOCKED CONTENT</span>
-                  <span>{latestAlert.timestamp}</span>
-                </div>
-                <LocalCodeBlock code={latestAlert.blockedOutput} />
+              <div className="ax-mono" style={{ marginTop: 13, border: "1px solid rgba(255,95,86,.2)", borderRadius: 9, background: "#080b0a", padding: "11px 12px", font: `400 10.5px/1.65 ${mono}`, color: "#ff9b95", overflow: "auto", maxHeight: 120 }}>
+                {latestAlert.description}
               </div>
-
-              <Link
-                href="/dashboard/alerts"
-                className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-red-950/40 hover:bg-red-950/60 border border-red-500/20 py-2 text-xs font-semibold text-red-200 transition-colors"
-              >
-                Go to Alerts Panel
-                <ExternalLink className="h-3.5 w-3.5" />
+              <Link href="/dashboard/alerts" style={{ display: "block", textAlign: "center", width: "100%", marginTop: 14, border: "1px solid rgba(255,95,86,.3)", borderRadius: 9, background: "rgba(255,95,86,.1)", color: "#ff9b95", font: "600 11px/1 var(--font-geist-sans)", padding: 11 }}>
+                Open in alerts
               </Link>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 1000px) {
+          .ax-over-grid { grid-template-columns: 1fr !important; }
+          .ax-stat-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+      `}</style>
     </div>
   );
 }
 
-// Result badge renderer
-function ResultBadge({ result }: { result: "PASS" | "BLOCK" | "ASYNC FLAG" }) {
-  const styles = {
-    PASS: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    BLOCK: "bg-red-500/10 text-red-400 border-red-500/20",
-    "ASYNC FLAG": "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  };
-
+function StatCard({ label, value, valueColor = "#e8edea", icon, loading, children }: { label: string; value: number; valueColor?: string; icon: React.ReactNode; loading?: boolean; children?: React.ReactNode }) {
   return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${styles[result]}`}
-    >
-      {result}
-    </span>
-  );
-}
-
-// Severity badge renderer
-function SeverityBadge({ severity }: { severity: "HIGH" | "MEDIUM" | "LOW" }) {
-  const styles = {
-    HIGH: "bg-red-500/20 text-red-400 border-red-500/30",
-    MEDIUM: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
-    LOW: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2 py-0.2 text-[10px] font-bold tracking-wider ${styles[severity]}`}
-    >
-      {severity}
-    </span>
-  );
-}
-
-// Local light code block
-function LocalCodeBlock({ code }: { code: string }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative overflow-hidden rounded-lg border border-border/80 bg-[#0a0a0a] font-mono text-[11px] leading-relaxed">
-      <div className="absolute right-2 top-2 z-20">
-        <button
-          onClick={handleCopy}
-          className="rounded p-1 bg-muted/40 hover:bg-muted text-muted-foreground hover:text-white transition-colors"
-        >
-          {copied ? <Check className="h-3 w-3 text-primary" /> : <Copy className="h-3 w-3" />}
-        </button>
+    <div style={{ background: panel, padding: "20px 22px 18px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span className="ax-mono" style={{ font: "600 9.5px/1 var(--font-geist-mono)", letterSpacing: ".16em", color: "#5b6b64" }}>{label}</span>
+        {icon}
       </div>
-      <pre className="p-3 pr-8 text-red-300 overflow-x-auto whitespace-pre">
-        <code>{code}</code>
-      </pre>
+      <div style={{ marginTop: 14, font: "700 34px/1 var(--font-geist-sans)", letterSpacing: "-.04em", color: valueColor }}>
+        {loading ? "—" : value.toLocaleString()}
+      </div>
+      <div style={{ marginTop: 14 }}>{children}</div>
     </div>
   );
 }
 
-// Skeletons and Loaders
-function LogsLoader() {
+function Meter({ pct, color, note }: { pct: number; color: string; note: string }) {
   return (
-    <div className="p-6 space-y-4">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex gap-4 animate-pulse">
-          <div className="h-4 w-24 rounded bg-muted/20" />
-          <div className="h-4 w-28 rounded bg-muted/20" />
-          <div className="h-4 w-16 rounded bg-muted/20" />
-          <div className="h-4 flex-1 rounded bg-muted/20" />
-        </div>
+    <>
+      <div style={{ height: 5, borderRadius: 999, background: "#141a17", overflow: "hidden" }}>
+        <div style={{ width: `${Math.min(pct, 100)}%`, height: "100%", background: color }} />
+      </div>
+      <div className="ax-mono" style={{ marginTop: 9, font: "500 10px/1 var(--font-geist-mono)", color: "#5b6b64" }}>{note}</div>
+    </>
+  );
+}
+
+function MiniBars() {
+  const heights = [38, 52, 44, 68, 58, 82, 71, 94];
+  return (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 26 }}>
+      {heights.map((h, i) => (
+        <div key={i} style={{ flex: 1, height: `${h}%`, background: i === heights.length - 1 ? "#37e39b" : h > 70 ? "#2b3a33" : "#1f2a25", borderRadius: 2, transformOrigin: "bottom", animation: `axBar .7s ease ${i * 0.04}s both` }} />
       ))}
     </div>
   );
 }
 
-function AlertCardSkeleton() {
+function Verdict({ result }: { result: "PASS" | "BLOCK" | "ASYNC FLAG" }) {
+  const c = result === "PASS" ? "#37e39b" : result === "BLOCK" ? "#ff5f56" : "#ffb347";
+  const label = result === "ASYNC FLAG" ? "FLAG" : result;
   return (
-    <div className="rounded-xl border border-border/50 bg-[#111111]/30 p-6 space-y-4 animate-pulse">
-      <div className="flex items-center justify-between">
-        <div className="h-4 w-32 rounded bg-muted/20" />
-        <div className="h-4 w-12 rounded bg-muted/20" />
-      </div>
-      <div className="h-6 w-48 rounded bg-muted/20" />
-      <div className="h-16 w-full rounded bg-muted/20" />
-      <div className="h-12 w-full rounded bg-muted/20" />
-    </div>
-  );
-}
-
-function EmptyState({ message }: { message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-      <p className="text-sm text-muted-foreground">{message}</p>
-    </div>
+    <span className="ax-mono" style={{ font: "700 9px/1 var(--font-geist-mono)", letterSpacing: ".1em", color: c, background: c + "1a", border: `1px solid ${c}47`, borderRadius: 5, padding: "4px 6px" }}>{label}</span>
   );
 }

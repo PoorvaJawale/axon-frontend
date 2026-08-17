@@ -104,7 +104,7 @@ export default function BillingPage() {
         subscription_id: subscriptionId,
         name: "Axon",
         description: "Axon Pro — 50,000 validations/month",
-        theme: { color: "#22c55e" },
+        theme: { color: "#37e39b" },
         handler: async (response: any) => {
           try {
             const verifyRes = await fetch("/webhook/razorpay-verify", {
@@ -222,7 +222,7 @@ export default function BillingPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Plan usage card */}
-        <div className="md:col-span-2 rounded-xl border border-border/50 bg-[#111111]/30 p-6 space-y-4">
+        <div className="md:col-span-2 rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-white">Current Subscription</h3>
             <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
@@ -265,7 +265,7 @@ export default function BillingPage() {
         </div>
 
         {/* Quick billing stats / action helper */}
-        <div className="md:col-span-1 rounded-xl border border-border/50 bg-[#111111]/30 p-6 flex flex-col justify-between">
+        <div className="md:col-span-1 rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 flex flex-col justify-between">
           <div>
             <h4 className="text-sm font-semibold text-white">Plan Actions</h4>
             <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
@@ -308,7 +308,7 @@ export default function BillingPage() {
           <h3 className="text-xl font-bold text-white">Upgrade to Pro</h3>
           <div className="grid gap-6 md:grid-cols-2">
             {/* Free Card */}
-            <div className="rounded-xl border border-border bg-[#111111]/20 p-6 space-y-4">
+            <div className="rounded-xl border border-border bg-[#0a0d0c]/20 p-6 space-y-4">
               <h4 className="text-base font-bold text-white">Free Plan</h4>
               <p className="text-3xl font-black text-white">
                 $0 <span className="text-xs text-muted-foreground font-normal">forever</span>
@@ -334,7 +334,7 @@ export default function BillingPage() {
             </div>
 
             {/* Pro Card */}
-            <div className="rounded-xl border border-primary bg-[#111111]/40 p-6 space-y-4 shadow-lg shadow-primary/5 relative">
+            <div className="rounded-xl border border-primary bg-[#0a0d0c]/40 p-6 space-y-4 shadow-lg shadow-primary/5 relative">
               <span className="absolute right-4 top-4 rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-[10px] font-bold text-primary">
                 RECOMMENDED
               </span>
@@ -379,7 +379,7 @@ export default function BillingPage() {
       {userPlan !== "Free" && (
         <div className="space-y-4">
           <h3 className="text-xl font-bold text-white">Payment History</h3>
-          <div className="rounded-xl border border-border/50 bg-[#111111]/30 overflow-hidden">
+          <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 overflow-hidden">
             <table className="w-full text-left">
               <thead>
                 <tr className="border-b border-border/50 bg-muted/5">
@@ -453,7 +453,7 @@ export default function BillingPage() {
       {/* Enterprise Contact Sales Section */}
       <section
         id="contact-sales"
-        className="rounded-xl border border-border/50 bg-[#111111]/30 p-6 space-y-6 scroll-mt-24"
+        className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-6 scroll-mt-24"
       >
         <div className="flex items-center gap-3">
           <div className="rounded-lg bg-primary/10 p-2 border border-primary/20">
@@ -494,7 +494,7 @@ export default function BillingPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="Jane Smith"
-                  className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -508,7 +508,7 @@ export default function BillingPage() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="Acme Corp"
-                  className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -524,7 +524,7 @@ export default function BillingPage() {
                   value={workEmail}
                   onChange={(e) => setWorkEmail(e.target.value)}
                   placeholder="jane@company.com"
-                  className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
 
@@ -535,7 +535,7 @@ export default function BillingPage() {
                 <select
                   value={agentVolume}
                   onChange={(e) => setAgentVolume(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-primary"
+                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary"
                 >
                   <option value="1-10">1-10 Active Agents</option>
                   <option value="10-50">10-50 Active Agents</option>
@@ -554,7 +554,7 @@ export default function BillingPage() {
                   value={validationEstimate}
                   onChange={(e) => setValidationEstimate(e.target.value)}
                   placeholder="e.g. 5,000,000"
-                  className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
                 />
               </div>
             </div>
@@ -574,13 +574,13 @@ export default function BillingPage() {
                 ].map((item) => (
                   <label
                     key={item.key}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-[#0c0c0c] px-3 py-2 cursor-pointer select-none transition-colors hover:border-primary/50"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-[#080b0a] px-3 py-2 cursor-pointer select-none transition-colors hover:border-primary/50"
                   >
                     <input
                       type="checkbox"
                       checked={systems[item.key as keyof typeof systems]}
                       onChange={() => handleSystemChange(item.key as keyof typeof systems)}
-                      className="rounded border-border text-primary focus:ring-0 h-4 w-4 bg-[#0a0a0a]"
+                      className="rounded border-border text-primary focus:ring-0 h-4 w-4 bg-[#080b0a]"
                     />
                     <span>{item.label}</span>
                   </label>
@@ -601,7 +601,7 @@ export default function BillingPage() {
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-[#111111] shadow ring-0 transition duration-200 ease-in-out ${
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-[#0a0d0c] shadow ring-0 transition duration-200 ease-in-out ${
                     onPremise ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
@@ -619,7 +619,7 @@ export default function BillingPage() {
                 onChange={(e) => setUseCase(e.target.value)}
                 placeholder="Explain the workflow validation pipeline you want to establish..."
                 rows={3}
-                className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
               />
             </div>
 
@@ -637,7 +637,7 @@ export default function BillingPage() {
       {/* MODAL 1: Upgrading Mock Checkout (Stripe/Razorpay style) */}
       {isCheckoutOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[460px] rounded-xl border border-primary/20 bg-[#111111] p-6 shadow-2xl space-y-5 relative">
+          <div className="w-full max-w-[460px] rounded-xl border border-primary/20 bg-[#0a0d0c] p-6 shadow-2xl space-y-5 relative">
             <div className="flex items-center justify-between border-b border-border/50 pb-3">
               <div className="flex items-center gap-2 text-primary font-bold">
                 <CreditCard className="h-5 w-5" />
@@ -660,7 +660,7 @@ export default function BillingPage() {
             ) : (
               <div className="space-y-4">
                 {/* Bill summary, OpenAI-style */}
-                <div className="rounded-lg border border-border/50 bg-[#0c0c0c] overflow-hidden text-xs">
+                <div className="rounded-lg border border-border/50 bg-[#080b0a] overflow-hidden text-xs">
                   <div className="flex justify-between items-center px-4 py-2.5 border-b border-border/40 text-muted-foreground font-semibold uppercase tracking-wider text-[10px]">
                     <span>Description</span>
                     <span>Amount</span>
@@ -701,7 +701,7 @@ export default function BillingPage() {
       {/* MODAL 2: Cancel Pro Subscription Confirmation */}
       {isCancelOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[420px] rounded-xl border border-border bg-[#111111] p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-[420px] rounded-xl border border-border bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
             <div className="flex items-center gap-3 text-red-400">
               <div className="rounded-lg bg-red-500/10 p-2 border border-red-500/20">
                 <AlertTriangle className="h-6 w-6" />

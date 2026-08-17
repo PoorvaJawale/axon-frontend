@@ -58,14 +58,14 @@ export default function AlertsPage() {
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex rounded-lg bg-[#111111] p-1 border border-border/50 shrink-0">
+        <div className="flex rounded-lg bg-[#0a0d0c] p-1 border border-border/50 shrink-0">
           {(["All", "Unreviewed", "Reviewed"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setFilter(tab)}
               className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all ${
                 filter === tab
-                  ? "bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/20"
+                  ? "bg-[#37e39b]/15 text-[#37e39b] border border-[#37e39b]/20"
                   : "text-muted-foreground hover:text-white border border-transparent"
               }`}
             >
@@ -80,7 +80,7 @@ export default function AlertsPage() {
         {isLoading ? (
           <AlertsListLoader />
         ) : alerts.length === 0 ? (
-          <div className="rounded-xl border border-border/50 bg-[#111111]/30 py-16 text-center">
+          <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 py-16 text-center">
             <CheckCircle className="mx-auto h-10 w-10 text-primary mb-3" />
             <h3 className="text-sm font-semibold text-white">All Clear</h3>
             <p className="mt-1 text-xs text-muted-foreground">
@@ -133,7 +133,7 @@ export default function AlertsPage() {
                     className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-1.8 text-xs font-semibold transition-all ${
                       alert.reviewed
                         ? "border-border bg-secondary hover:bg-muted text-muted-foreground hover:text-white"
-                        : "border-[#22c55e]/25 bg-[#22c55e]/10 text-primary hover:bg-[#22c55e]/20"
+                        : "border-[#37e39b]/25 bg-[#37e39b]/10 text-primary hover:bg-[#37e39b]/20"
                     }`}
                   >
                     {alert.reviewed ? (
@@ -191,7 +191,7 @@ function AlertCodeBlock({ code }: { code: string }) {
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-border/60 bg-[#0a0a0a] shadow-inner relative group">
+    <div className="overflow-hidden rounded-lg border border-border/60 bg-[#080b0a] shadow-inner relative group">
       <div className="flex items-center justify-between border-b border-border/80 px-4 py-2 bg-muted/5">
         <div className="flex items-center gap-1">
           <div className="h-2 w-2 rounded-full bg-red-500/80" />
@@ -229,7 +229,7 @@ function AlertsListLoader() {
       {[...Array(3)].map((_, i) => (
         <div
           key={i}
-          className="rounded-xl border border-border/50 bg-[#111111]/30 p-6 space-y-4 animate-pulse"
+          className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-4 animate-pulse"
         >
           <div className="flex items-center justify-between">
             <div className="h-5 w-40 rounded bg-muted/20" />

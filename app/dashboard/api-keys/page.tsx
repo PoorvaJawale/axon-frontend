@@ -154,7 +154,7 @@ export default function ApiKeysPage() {
       </div>
 
       {/* Shared quota summary */}
-      <div className="rounded-xl border border-border/50 bg-[#111111]/30 px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 text-sm">
+      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 text-sm">
         <div className="flex items-center gap-2 font-semibold text-white">
           <Shield className="h-4.5 w-4.5 text-primary" />
           {userPlan} plan
@@ -172,7 +172,7 @@ export default function ApiKeysPage() {
       </div>
 
       {/* Keys table */}
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-[#111111]/30">
+      <div className="overflow-hidden rounded-xl border border-border/50 bg-[#0a0d0c]/30">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead>
@@ -264,7 +264,7 @@ export default function ApiKeysPage() {
       </div>
 
       {/* Quick Integration helper */}
-      <div className="rounded-xl border border-border/50 bg-[#111111]/30 p-6 space-y-3 max-w-xl">
+      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-3 max-w-xl">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
           <Code className="h-4.5 w-4.5 text-primary" />
           Quick Integration
@@ -273,7 +273,7 @@ export default function ApiKeysPage() {
           Send your secret API key inside the{" "}
           <code className="text-primary font-mono">Authorization</code> header:
         </p>
-        <div className="overflow-hidden rounded-lg border border-border/80 bg-[#0a0a0a] font-mono text-[11px] p-4">
+        <div className="overflow-hidden rounded-lg border border-border/80 bg-[#080b0a] font-mono text-[11px] p-4">
           <span className="text-purple-400">Authorization:</span>{" "}
           <span className="text-emerald-400">Bearer sk-axon-YOUR_KEY</span>
         </div>
@@ -282,7 +282,7 @@ export default function ApiKeysPage() {
       {/* MODAL: Create key */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[440px] rounded-xl border border-border bg-[#111111] p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-[440px] rounded-xl border border-border bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
             <h3 className="text-lg font-bold text-white">Create new secret key</h3>
             {createError && (
               <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
@@ -300,7 +300,7 @@ export default function ApiKeysPage() {
                 onChange={(e) => setNewKeyName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 placeholder="e.g. support-agent-prod"
-                className="w-full rounded-lg border border-border bg-[#0c0c0c] px-3.5 py-2 text-sm text-white placeholder-muted-foreground/50 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
+                className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white placeholder-muted-foreground/50 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
               />
               <p className="mt-1.5 text-[11px] text-muted-foreground">
                 Name it after the project or agent that will use it.
@@ -332,9 +332,9 @@ export default function ApiKeysPage() {
       {/* MODAL: One-time key display */}
       {freshKey && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[500px] rounded-xl border border-[#22c55e]/20 bg-[#111111] p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-[500px] rounded-xl border border-[#37e39b]/20 bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
             <div className="flex items-center gap-3 text-primary">
-              <div className="rounded-lg bg-primary/10 p-2 border border-[#22c55e]/20">
+              <div className="rounded-lg bg-primary/10 p-2 border border-[#37e39b]/20">
                 <Shield className="h-6 w-6" />
               </div>
               <h3 className="text-lg font-bold text-white">Key created</h3>
@@ -343,7 +343,7 @@ export default function ApiKeysPage() {
               Save this key now. It will not be shown again.
             </p>
             <div className="flex items-center gap-2">
-              <div className="flex-1 font-mono text-xs bg-[#0c0c0c] border border-border px-3.5 py-2.5 rounded-lg text-white select-all break-all">
+              <div className="flex-1 font-mono text-xs bg-[#080b0a] border border-border px-3.5 py-2.5 rounded-lg text-white select-all break-all">
                 {freshKey}
               </div>
               <button
@@ -376,7 +376,7 @@ export default function ApiKeysPage() {
       {/* MODAL: Revoke confirmation */}
       {revokeTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[440px] rounded-xl border border-border bg-[#111111] p-6 shadow-2xl space-y-5">
+          <div className="w-full max-w-[440px] rounded-xl border border-border bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
             <div className="flex items-center gap-3 text-red-400">
               <div className="rounded-lg bg-red-500/10 p-2 border border-red-500/20">
                 <AlertTriangle className="h-6 w-6" />
