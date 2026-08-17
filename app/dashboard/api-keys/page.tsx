@@ -3,16 +3,7 @@
 import React, { useState } from "react";
 import useSWR from "swr";
 import { useAuth } from "@/app/context/AuthContext";
-import {
-  Key,
-  Copy,
-  Check,
-  Plus,
-  Trash2,
-  AlertTriangle,
-  Shield,
-  Code,
-} from "lucide-react";
+import { Key, Copy, Check, Plus, Trash2, Shield, Code, ShieldAlert } from "lucide-react";
 
 type ApiKeyRow = {
   id: number;
@@ -27,18 +18,17 @@ type ApiKeyRow = {
 };
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const mono = "var(--font-geist-mono)";
+const line = "1px solid rgba(140,255,190,.1)";
+const panel = "#0a0d0c";
+const KEY_COLS = "1.15fr 1.1fr 96px 110px 110px 120px 40px";
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
 }
-
 function maskedKey(prefix: string): string {
   return prefix ? `${prefix}••••••••` : "sk-axon-••••••••••••";
 }
@@ -46,369 +36,190 @@ function maskedKey(prefix: string): string {
 export default function ApiKeysPage() {
   const { userApiKey, userPlan, regenerateKey } = useAuth();
 
-  const { data, isLoading, mutate } = useSWR("/webhook/api-keys", fetcher, {
-    refreshInterval: 15000,
-    revalidateOnFocus: true,
-  });
-  const { data: usageData } = useSWR("/webhook/usage", fetcher, {
-    refreshInterval: 15000,
-    revalidateOnFocus: true,
-  });
+  const { data, isLoading, mutate } = useSWR("/webhook/api-keys", fetcher, { refreshInterval: 15000, revalidateOnFocus: true });
+  const { data: usageData } = useSWR("/webhook/usage", fetcher, { refreshInterval: 15000, revalidateOnFocus: true });
 
   const keys: ApiKeyRow[] = data?.keys ?? [];
   const monthlyRequests = usageData?.monthly_requests ?? 0;
   const requestLimit = usageData?.request_limit ?? 1000;
-
-  // Which key powers this dashboard session (matched by prefix)
   const currentPrefix = userApiKey ? userApiKey.slice(0, 20) : null;
 
-  // Create-key modal state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState("");
-
-  // One-time key display state
   const [freshKey, setFreshKey] = useState<string | null>(null);
   const [copiedFresh, setCopiedFresh] = useState(false);
-
-  // Revoke modal state
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyRow | null>(null);
   const [isRevoking, setIsRevoking] = useState(false);
 
   const handleCreate = async () => {
     setCreateError("");
-    if (!newKeyName.trim()) {
-      setCreateError("Give the key a name — e.g. the project or agent using it.");
-      return;
-    }
+    if (!newKeyName.trim()) { setCreateError("Give the key a name — e.g. the project or agent using it."); return; }
     setIsCreating(true);
     try {
-      const res = await fetch("/webhook/create-api-key", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newKeyName.trim() }),
-      });
+      const res = await fetch("/webhook/create-api-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: newKeyName.trim() }) });
       if (!res.ok) throw new Error(await res.text());
       const created = await res.json();
-      if (created.apiKey) {
-        setFreshKey(created.apiKey);
-        regenerateKey(created.apiKey);
-      }
-      setIsCreateOpen(false);
-      setNewKeyName("");
-      mutate();
-    } catch (err) {
-      console.error("Key creation failed:", err);
-      setCreateError("Could not create the key. Please try again.");
-    } finally {
-      setIsCreating(false);
-    }
+      if (created.apiKey) { setFreshKey(created.apiKey); regenerateKey(created.apiKey); }
+      setIsCreateOpen(false); setNewKeyName(""); mutate();
+    } catch (err) { console.error("Key creation failed:", err); setCreateError("Could not create the key. Please try again."); }
+    finally { setIsCreating(false); }
   };
 
   const handleRevoke = async () => {
     if (!revokeTarget) return;
     setIsRevoking(true);
     try {
-      const res = await fetch("/webhook/revoke-key", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyId: revokeTarget.id }),
-      });
-      if (res.ok) {
-        setRevokeTarget(null);
-        mutate();
-      } else {
-        alert("Could not revoke the key. Please try again.");
-      }
-    } finally {
-      setIsRevoking(false);
-    }
+      const res = await fetch("/webhook/revoke-key", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ keyId: revokeTarget.id }) });
+      if (res.ok) { setRevokeTarget(null); mutate(); } else { alert("Could not revoke the key. Please try again."); }
+    } finally { setIsRevoking(false); }
   };
 
   const handleCopyFresh = () => {
     if (!freshKey) return;
     navigator.clipboard.writeText(freshKey);
-    setCopiedFresh(true);
-    setTimeout(() => setCopiedFresh(false), 2000);
+    setCopiedFresh(true); setTimeout(() => setCopiedFresh(false), 2000);
   };
 
   return (
-    <div className="space-y-8 text-white relative">
-      {/* Page Title + Create button */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "axRise .35s ease both" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24 }}>
         <div>
-          <h1 className="text-3xl font-bold text-foreground">API Keys</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create a key for each project or agent. All keys share your plan's
-            monthly validation quota.
+          <h1 style={{ margin: 0, font: "700 30px/1.1 var(--font-geist-sans)", letterSpacing: "-.035em" }}>API keys</h1>
+          <p style={{ margin: "8px 0 0", maxWidth: 560, font: "400 13px/1.5 var(--font-geist-sans)", color: "#8b9a93" }}>
+            One key per agent or project. All keys draw on the same monthly quota ({monthlyRequests.toLocaleString()} / {requestLimit >= 999999999 ? "∞" : requestLimit.toLocaleString()} used), so you can revoke a single agent without touching the rest.
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary hover:bg-primary/90 text-black font-semibold text-sm px-4 py-2.5 transition-colors shrink-0 cursor-pointer"
-        >
-          <Plus className="h-4 w-4" />
-          Create new secret key
+        <button onClick={() => setIsCreateOpen(true)} style={{ display: "flex", alignItems: "center", gap: 8, border: "none", borderRadius: 10, background: "#37e39b", color: "#04150d", font: "700 12.5px/1 var(--font-geist-sans)", padding: "12px 16px", cursor: "pointer" }}>
+          <Plus style={{ width: 14, height: 14 }} />New secret key
         </button>
       </div>
 
-      {/* Shared quota summary */}
-      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-8 text-sm">
-        <div className="flex items-center gap-2 font-semibold text-white">
-          <Shield className="h-4.5 w-4.5 text-primary" />
-          {userPlan} plan
-        </div>
-        <div className="text-muted-foreground">
-          Validations used this month:{" "}
-          <span className="text-white font-semibold">
-            {monthlyRequests.toLocaleString()} /{" "}
-            {requestLimit === 999999999
-              ? "Unlimited"
-              : requestLimit.toLocaleString()}
-          </span>{" "}
-          <span className="text-xs">(shared across all keys)</span>
-        </div>
-      </div>
-
       {/* Keys table */}
-      <div className="overflow-hidden rounded-xl border border-border/50 bg-[#0a0d0c]/30">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-border/50 bg-muted/5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                <th className="px-6 py-3.5">Name</th>
-                <th className="px-6 py-3.5">Secret Key</th>
-                <th className="px-6 py-3.5">Status</th>
-                <th className="px-6 py-3.5">Created</th>
-                <th className="px-6 py-3.5">Last Used</th>
-                <th className="px-6 py-3.5">Validations Used</th>
-                <th className="px-6 py-3.5"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/50">
-              {isLoading && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-muted-foreground text-xs">
-                    Loading your keys...
-                  </td>
-                </tr>
-              )}
-              {!isLoading && keys.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-10 text-center text-muted-foreground text-xs">
-                    No API keys yet — create your first one to start validating.
-                  </td>
-                </tr>
-              )}
-              {keys.map((k) => {
-                const isCurrent = currentPrefix !== null && k.keyPrefix === currentPrefix;
-                return (
-                  <tr key={k.id} className="transition-colors hover:bg-muted/10">
-                    <td className="px-6 py-4 font-medium text-white">
-                      <div className="flex items-center gap-2">
-                        <Key className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                        {k.name}
-                        {isCurrent && (
-                          <span className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[9px] font-bold text-primary">
-                            CURRENT
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 font-mono text-xs text-muted-foreground">
-                      {maskedKey(k.keyPrefix)}
-                    </td>
-                    <td className="px-6 py-4">
-                      {k.isActive ? (
-                        <span className="inline-flex items-center rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold text-emerald-400">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-0.5 text-[10px] font-bold text-red-400">
-                          Revoked
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-muted-foreground">
-                      {formatDate(k.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 text-xs text-muted-foreground">
-                      {formatDate(k.lastUsedAt)}
-                    </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-white">
-                      {k.monthlyRequests.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      {k.isActive && (
-                        <button
-                          onClick={() => setRevokeTarget(k)}
-                          disabled={isCurrent}
-                          title={
-                            isCurrent
-                              ? "This key powers your dashboard session — create a new key first"
-                              : "Revoke this key"
-                          }
-                          className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-400 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      <div style={{ border: line, borderRadius: 14, background: panel, overflow: "hidden" }}>
+        <div className="ax-mono" style={{ display: "grid", gridTemplateColumns: KEY_COLS, padding: "11px 18px", borderBottom: line, background: "#0d100f", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#46534d" }}>
+          <span>NAME</span><span>SECRET</span><span>STATUS</span><span>CREATED</span><span>LAST USED</span><span>VALIDATIONS</span><span></span>
         </div>
-      </div>
-
-      {/* Quick Integration helper */}
-      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-3 max-w-xl">
-        <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Code className="h-4.5 w-4.5 text-primary" />
-          Quick Integration
-        </div>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Send your secret API key inside the{" "}
-          <code className="text-primary font-mono">Authorization</code> header:
-        </p>
-        <div className="overflow-hidden rounded-lg border border-border/80 bg-[#080b0a] font-mono text-[11px] p-4">
-          <span className="text-purple-400">Authorization:</span>{" "}
-          <span className="text-emerald-400">Bearer sk-axon-YOUR_KEY</span>
-        </div>
-      </div>
-
-      {/* MODAL: Create key */}
-      {isCreateOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[440px] rounded-xl border border-border bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
-            <h3 className="text-lg font-bold text-white">Create new secret key</h3>
-            {createError && (
-              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
-                {createError}
-              </div>
-            )}
-            <div>
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Key name
-              </label>
-              <input
-                type="text"
-                autoFocus
-                value={newKeyName}
-                onChange={(e) => setNewKeyName(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
-                placeholder="e.g. support-agent-prod"
-                className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white placeholder-muted-foreground/50 outline-none transition-colors focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                Name it after the project or agent that will use it.
-              </p>
-            </div>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setIsCreateOpen(false);
-                  setNewKeyName("");
-                  setCreateError("");
-                }}
-                className="rounded-lg border border-border bg-transparent hover:bg-muted text-xs font-semibold px-4 py-2 text-white transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreate}
-                disabled={isCreating}
-                className="rounded-lg bg-primary hover:bg-primary/90 text-black text-xs font-semibold px-4 py-2 transition-colors cursor-pointer disabled:opacity-60"
-              >
-                {isCreating ? "Creating..." : "Create key"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: One-time key display */}
-      {freshKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[500px] rounded-xl border border-[#37e39b]/20 bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
-            <div className="flex items-center gap-3 text-primary">
-              <div className="rounded-lg bg-primary/10 p-2 border border-[#37e39b]/20">
-                <Shield className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white">Key created</h3>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Save this key now. It will not be shown again.
-            </p>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 font-mono text-xs bg-[#080b0a] border border-border px-3.5 py-2.5 rounded-lg text-white select-all break-all">
-                {freshKey}
-              </div>
-              <button
-                onClick={handleCopyFresh}
-                className="rounded-lg border border-border bg-secondary hover:bg-muted p-2.5 text-muted-foreground hover:text-white transition-colors cursor-pointer"
-                title="Copy key"
-              >
-                {copiedFresh ? (
-                  <Check className="h-4.5 w-4.5 text-primary" />
-                ) : (
-                  <Copy className="h-4.5 w-4.5" />
+        {isLoading && <div style={{ padding: 40, textAlign: "center", color: "#5b6b64", font: "400 12px/1 var(--font-geist-sans)" }}>Loading your keys…</div>}
+        {!isLoading && keys.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#5b6b64", font: "400 13px/1 var(--font-geist-sans)" }}>No API keys yet — create your first one to start validating.</div>}
+        {keys.map((k, i) => {
+          const isCurrent = currentPrefix !== null && k.keyPrefix === currentPrefix;
+          return (
+            <div key={k.id} style={{ display: "grid", gridTemplateColumns: KEY_COLS, padding: "15px 18px", borderBottom: i < keys.length - 1 ? "1px solid rgba(140,255,190,.05)" : "none", alignItems: "center", opacity: k.isActive ? 1 : 0.55 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 8, font: "600 12.5px/1 var(--font-geist-sans)" }}>
+                <Key style={{ width: 13, height: 13, color: "#5b6b64", flex: "none" }} />
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k.name}</span>
+                {isCurrent && <span className="ax-mono" style={{ font: `700 8.5px/1 ${mono}`, letterSpacing: ".1em", color: "#37e39b", border: "1px solid rgba(55,227,155,.28)", borderRadius: 4, padding: "3px 5px", flex: "none" }}>CURRENT</span>}
+              </span>
+              <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>{maskedKey(k.keyPrefix)}</span>
+              <span>
+                <span className="ax-mono" style={{ font: `700 9px/1 ${mono}`, color: k.isActive ? "#37e39b" : "#ff5f56", background: k.isActive ? "rgba(55,227,155,.1)" : "rgba(255,95,86,.1)", border: `1px solid ${k.isActive ? "rgba(55,227,155,.26)" : "rgba(255,95,86,.26)"}`, borderRadius: 5, padding: "4px 6px" }}>{k.isActive ? "ACTIVE" : "REVOKED"}</span>
+              </span>
+              <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>{formatDate(k.createdAt)}</span>
+              <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>{formatDate(k.lastUsedAt)}</span>
+              <span className="ax-mono" style={{ font: `600 12px/1 ${mono}`, color: "#e8edea" }}>{k.monthlyRequests.toLocaleString()}</span>
+              <span style={{ display: "flex", justifyContent: "flex-end" }}>
+                {k.isActive && (
+                  <button onClick={() => !isCurrent && setRevokeTarget(k)} disabled={isCurrent} title={isCurrent ? "This key powers your session — create a new key first" : "Revoke this key"} style={{ background: "none", border: "none", cursor: isCurrent ? "not-allowed" : "pointer", color: isCurrent ? "#2c3733" : "#5b6b64", display: "flex", padding: 0 }}>
+                    <Trash2 style={{ width: 14, height: 14 }} />
+                  </button>
                 )}
-              </button>
+              </span>
             </div>
-            <div className="text-xs font-semibold text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-3 py-2 rounded-lg">
-              Warning: This key will only be shown once
-            </div>
-            <div className="flex items-center justify-end pt-2">
-              <button
-                onClick={() => setFreshKey(null)}
-                className="rounded-lg bg-primary text-black hover:bg-primary/90 text-xs font-semibold px-5 py-2 transition-colors cursor-pointer"
-              >
-                I saved my key
-              </button>
-            </div>
+          );
+        })}
+      </div>
+
+      {/* Two info cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, alignItems: "start" }} className="ax-keys-cards">
+        <div style={{ border: line, borderRadius: 14, background: panel, padding: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, font: "700 13px/1 var(--font-geist-sans)" }}>
+            <Code style={{ width: 15, height: 15, color: "#37e39b" }} />Quick integration
+          </div>
+          <p style={{ margin: "11px 0 0", font: "400 12px/1.6 var(--font-geist-sans)", color: "#8b9a93" }}>
+            Send the secret in the <span className="ax-mono" style={{ color: "#37e39b" }}>Authorization</span> header. Rotate by creating a new key and revoking the old one — never edit a key in place.
+          </p>
+          <div className="ax-mono" style={{ marginTop: 14, border: line, borderRadius: 9, background: "#080b0a", padding: "12px 13px", font: `400 11.5px/1.6 ${mono}` }}>
+            <span style={{ color: "#a78bfa" }}>Authorization:</span> <span style={{ color: "#37e39b" }}>Bearer sk-axon-YOUR_KEY</span>
           </div>
         </div>
+        <div style={{ border: "1px solid rgba(255,179,71,.2)", borderRadius: 14, background: "rgba(255,179,71,.04)", padding: 20 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, font: "700 13px/1 var(--font-geist-sans)", color: "#ffb347" }}>
+            <ShieldAlert style={{ width: 15, height: 15 }} />Key hygiene
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 13, font: "400 12px/1.5 var(--font-geist-sans)", color: "#8b9a93" }}>
+            {["Secrets are shown once at creation and stored hashed.", "Revoked keys stop working immediately and can be deleted.", "Rotate keys that have been exposed or are older than 90 days."].map((t) => (
+              <div key={t} style={{ display: "flex", gap: 9 }}><Check style={{ width: 14, height: 14, color: "#ffb347", flex: "none" }} />{t}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Create modal */}
+      {isCreateOpen && (
+        <Modal onClose={() => { setIsCreateOpen(false); setNewKeyName(""); setCreateError(""); }}>
+          <h3 style={{ margin: 0, font: "700 16px/1 var(--font-geist-sans)" }}>Create new secret key</h3>
+          {createError && <div style={{ marginTop: 14, borderRadius: 8, background: "rgba(255,95,86,.1)", border: "1px solid rgba(255,95,86,.2)", padding: 11, font: "400 11px/1.4 var(--font-geist-sans)", color: "#ff9b95" }}>{createError}</div>}
+          <label className="ax-mono" style={{ display: "block", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#5b6b64", margin: "18px 0 8px" }}>KEY NAME</label>
+          <input autoFocus value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleCreate()} placeholder="e.g. support-agent-prod"
+            style={{ width: "100%", boxSizing: "border-box", borderRadius: 9, border: line, background: "#080b0a", padding: "10px 12px", font: "400 13px/1 var(--font-geist-sans)", color: "#e8edea", outline: "none" }} />
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
+            <button onClick={() => { setIsCreateOpen(false); setNewKeyName(""); setCreateError(""); }} style={btnGhost}>Cancel</button>
+            <button onClick={handleCreate} disabled={isCreating} style={btnPrimary}>{isCreating ? "Creating…" : "Create key"}</button>
+          </div>
+        </Modal>
       )}
 
-      {/* MODAL: Revoke confirmation */}
-      {revokeTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-[440px] rounded-xl border border-border bg-[#0a0d0c] p-6 shadow-2xl space-y-5">
-            <div className="flex items-center gap-3 text-red-400">
-              <div className="rounded-lg bg-red-500/10 p-2 border border-red-500/20">
-                <AlertTriangle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white">
-                Revoke &quot;{revokeTarget.name}&quot;?
-              </h3>
-            </div>
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              This key (
-              <span className="font-mono">{maskedKey(revokeTarget.keyPrefix)}</span>
-              ) will stop working immediately. Any agents using it will get 401
-              errors. This cannot be undone.
-            </p>
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                onClick={() => setRevokeTarget(null)}
-                className="rounded-lg border border-border bg-transparent hover:bg-muted text-xs font-semibold px-4 py-2 text-white transition-colors cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRevoke}
-                disabled={isRevoking}
-                className="rounded-lg bg-red-500 hover:bg-red-600 text-black text-xs font-semibold px-4 py-2 transition-colors cursor-pointer disabled:opacity-60"
-              >
-                {isRevoking ? "Revoking..." : "Yes, revoke key"}
-              </button>
-            </div>
+      {/* Fresh key modal */}
+      {freshKey && (
+        <Modal onClose={() => setFreshKey(null)}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#37e39b" }}>
+            <Shield style={{ width: 20, height: 20 }} /><h3 style={{ margin: 0, font: "700 16px/1 var(--font-geist-sans)", color: "#e8edea" }}>Key created</h3>
           </div>
-        </div>
+          <p style={{ margin: "14px 0 0", font: "400 12px/1.5 var(--font-geist-sans)", color: "#8b9a93" }}>Save this key now. It will not be shown again.</p>
+          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+            <div className="ax-mono" style={{ flex: 1, font: `400 12px/1.4 ${mono}`, background: "#080b0a", border: line, padding: "10px 12px", borderRadius: 9, color: "#e8edea", wordBreak: "break-all" }}>{freshKey}</div>
+            <button onClick={handleCopyFresh} title="Copy" style={{ border: line, background: "#0f1312", borderRadius: 9, padding: 10, color: "#8b9a93", cursor: "pointer", display: "flex" }}>{copiedFresh ? <Check style={{ width: 16, height: 16, color: "#37e39b" }} /> : <Copy style={{ width: 16, height: 16 }} />}</button>
+          </div>
+          <div className="ax-mono" style={{ marginTop: 14, font: `600 10px/1.4 ${mono}`, color: "#ffb347", background: "rgba(255,179,71,.1)", border: "1px solid rgba(255,179,71,.2)", padding: "9px 11px", borderRadius: 8 }}>Warning: this key will only be shown once</div>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 18 }}>
+            <button onClick={() => setFreshKey(null)} style={btnPrimary}>I saved my key</button>
+          </div>
+        </Modal>
       )}
+
+      {/* Revoke modal */}
+      {revokeTarget && (
+        <Modal onClose={() => setRevokeTarget(null)}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#ff5f56" }}>
+            <Trash2 style={{ width: 18, height: 18 }} /><h3 style={{ margin: 0, font: "700 16px/1 var(--font-geist-sans)", color: "#e8edea" }}>Revoke &quot;{revokeTarget.name}&quot;?</h3>
+          </div>
+          <p style={{ margin: "14px 0 0", font: "400 12px/1.5 var(--font-geist-sans)", color: "#8b9a93" }}>
+            This key (<span className="ax-mono">{maskedKey(revokeTarget.keyPrefix)}</span>) stops working immediately. Any agents using it will get 401 errors. This cannot be undone.
+          </p>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 20 }}>
+            <button onClick={() => setRevokeTarget(null)} style={btnGhost}>Cancel</button>
+            <button onClick={handleRevoke} disabled={isRevoking} style={{ ...btnPrimary, background: "#ff5f56", color: "#180605" }}>{isRevoking ? "Revoking…" : "Yes, revoke key"}</button>
+          </div>
+        </Modal>
+      )}
+
+      <style>{`@media (max-width: 900px){ .ax-keys-cards { grid-template-columns: 1fr !important; } }`}</style>
+    </div>
+  );
+}
+
+const btnGhost: React.CSSProperties = { border: "1px solid rgba(140,255,190,.16)", borderRadius: 9, background: "transparent", color: "#e8edea", font: "600 12px/1 var(--font-geist-sans)", padding: "10px 14px", cursor: "pointer" };
+const btnPrimary: React.CSSProperties = { border: "none", borderRadius: 9, background: "#37e39b", color: "#04150d", font: "700 12px/1 var(--font-geist-sans)", padding: "10px 16px", cursor: "pointer" };
+
+function Modal({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,.7)", backdropFilter: "blur(6px)", padding: 16 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 460, borderRadius: 14, border: "1px solid rgba(140,255,190,.14)", background: "#0d100f", padding: 22, boxShadow: "0 30px 80px -30px rgba(0,0,0,.9)" }}>
+        {children}
+      </div>
     </div>
   );
 }

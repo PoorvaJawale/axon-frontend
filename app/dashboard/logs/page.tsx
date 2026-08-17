@@ -2,17 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
-import {
-  Search,
-  ChevronDown,
-  ChevronUp,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
-  Copy,
-  Check,
-  Calendar,
-} from "lucide-react";
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
 
 export type WebhookLogEntry = {
   id: string;
@@ -26,338 +16,151 @@ export type WebhookLogEntry = {
 };
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const mono = "var(--font-geist-mono)";
+const line = "1px solid rgba(140,255,190,.1)";
+const panel = "#0a0d0c";
+const COLS = "26px 80px 150px 100px 130px 92px 1fr";
 
 export default function LogsPage() {
-  
-  // State for search and filtering
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [resultFilter, setResultFilter] = useState("All");
   const [actionFilter, setActionFilter] = useState("All");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 
-  // Debounce search input to avoid spamming mock API requests
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(1); // reset page on search
-    }, 300);
+    const handler = setTimeout(() => { setDebouncedSearch(search); setCurrentPage(1); }, 300);
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Construct URL with query parameters
   const queryParams = new URLSearchParams({
     page: currentPage.toString(),
-    limit: "10", // Using 10 per page for better layout and testing
+    limit: "10",
     result: resultFilter,
     actionType: actionFilter,
     search: debouncedSearch,
   });
 
-  const { data, isLoading } = useSWR(
-    `/webhook/logs?${queryParams.toString()}`,
-    fetcher,
-    { refreshInterval: 10000, revalidateOnFocus: true }
-  );
-
-  const logs = data?.logs ?? [];
+  const { data, isLoading } = useSWR(`/webhook/logs?${queryParams.toString()}`, fetcher, { refreshInterval: 10000, revalidateOnFocus: true });
+  const logs: WebhookLogEntry[] = data?.logs ?? [];
   const pagination = data?.pagination ?? { currentPage: 1, totalPages: 1, totalCount: 0 };
 
-  const handleRowClick = (logId: string) => {
-    setExpandedLogId(expandedLogId === logId ? null : logId);
-  };
+  const verdictColor = (r: string) => (r === "PASS" ? "#37e39b" : r === "BLOCK" ? "#ff5f56" : "#ffb347");
+  const verdictLabel = (r: string) => (r === "ASYNC FLAG" ? "FLAG" : r);
 
   return (
-    <div className="space-y-6 text-white">
-      {/* Page Title */}
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "axRise .35s ease both" }}>
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Validation Logs</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Review historical validation queries sent to Axon middleware
-        </p>
+        <h1 style={{ margin: 0, font: "700 30px/1.1 var(--font-geist-sans)", letterSpacing: "-.035em" }}>Validation logs</h1>
+        <p style={{ margin: "8px 0 0", font: "400 13px/1.4 var(--font-geist-sans)", color: "#8b9a93" }}>Every request Axon has judged, with the raw output it saw.</p>
       </div>
 
-      {/* Filter Bar */}
-      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-4 space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-5">
-          {/* Search Input */}
-          <div className="relative lg:col-span-2">
-            <Search className="absolute left-3 top-2.5 h-4.5 w-4.5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search by Agent ID or reason..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-border bg-[#080b0a] pl-10 pr-3.5 py-2 text-sm text-white placeholder-muted-foreground/60 outline-none transition-colors focus:border-[#37e39b] focus:ring-1 focus:ring-[#37e39b]"
-            />
-          </div>
-
-          {/* Filter Result Dropdown */}
-          <div className="relative">
-            <select
-              value={resultFilter}
-              onChange={(e) => {
-                setResultFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full appearance-none rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-[#37e39b]"
-            >
-              <option value="All">Result: All</option>
-              <option value="PASS">PASS</option>
-              <option value="BLOCK">BLOCK</option>
-              <option value="ASYNC FLAG">ASYNC FLAG</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-3 h-4 w-4 pointer-events-none text-muted-foreground" />
-          </div>
-
-          {/* Filter Action Type Dropdown */}
-          <div className="relative">
-            <select
-              value={actionFilter}
-              onChange={(e) => {
-                setActionFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full appearance-none rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-[#37e39b] capitalize"
-            >
-              <option value="All">Action: All</option>
-              <option value="email">email</option>
-              <option value="database">database</option>
-              <option value="payment">payment</option>
-              <option value="chat">chat</option>
-              <option value="api_call">api_call</option>
-            </select>
-            <ChevronDown className="absolute right-3 top-3 h-4 w-4 pointer-events-none text-muted-foreground" />
-          </div>
-
-          {/* Date Pickers (Custom representation) */}
-          <div className="flex gap-2 items-center">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded-lg border border-border bg-[#080b0a] px-2 py-1.5 text-xs text-white outline-none focus:border-[#37e39b]"
-              title="Start Date"
-            />
-            <span className="text-muted-foreground text-xs">-</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded-lg border border-border bg-[#080b0a] px-2 py-1.5 text-xs text-white outline-none focus:border-[#37e39b]"
-              title="End Date"
-            />
-          </div>
+      {/* Filters */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, border: line, borderRadius: 9, background: "#0d100f", padding: "9px 12px", minWidth: 280, flex: 1 }}>
+          <Search style={{ width: 14, height: 14, color: "#46534d" }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="agent_id, reason, output…" className="ax-mono"
+            style={{ flex: 1, background: "transparent", border: "none", outline: "none", font: `400 12px/1 ${mono}`, color: "#e8edea" }} />
         </div>
+        <div style={{ display: "flex", border: line, borderRadius: 9, background: "#0d100f", overflow: "hidden" }}>
+          {["All", "PASS", "BLOCK", "ASYNC FLAG"].map((r) => (
+            <button key={r} onClick={() => { setResultFilter(r); setCurrentPage(1); }} className="ax-mono" style={{ font: `600 10.5px/1 ${mono}`, padding: "10px 12px", border: "none", cursor: "pointer", color: resultFilter === r ? "#04150d" : "#5b6b64", background: resultFilter === r ? "#37e39b" : "transparent" }}>{r === "ASYNC FLAG" ? "FLAG" : r}</button>
+          ))}
+        </div>
+        <div style={{ position: "relative" }}>
+          <select value={actionFilter} onChange={(e) => { setActionFilter(e.target.value); setCurrentPage(1); }} className="ax-mono"
+            style={{ appearance: "none", border: line, borderRadius: 9, background: "#0d100f", padding: "10px 30px 10px 12px", font: `500 11px/1 ${mono}`, color: "#8b9a93", outline: "none", cursor: "pointer" }}>
+            <option value="All">action: all</option>
+            <option value="email">email</option>
+            <option value="database">database</option>
+            <option value="payment">payment</option>
+            <option value="chat">chat</option>
+            <option value="api_call">api_call</option>
+          </select>
+          <ChevronDown style={{ width: 13, height: 13, color: "#5b6b64", position: "absolute", right: 10, top: 11, pointerEvents: "none" }} />
+        </div>
+        <div style={{ flex: 1 }} />
+        <span className="ax-mono" style={{ font: `500 11px/1 ${mono}`, color: "#46534d" }}>{pagination.totalCount.toLocaleString()} entries</span>
       </div>
 
-      {/* Logs Table Container */}
-      <div className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 overflow-hidden">
-        <div className="overflow-x-auto">
-          {isLoading ? (
-            <LogsTableLoader />
-          ) : logs.length === 0 ? (
-            <div className="py-16 text-center">
-              <p className="text-sm text-muted-foreground">No logs found matching your filters.</p>
-            </div>
-          ) : (
-            <table className="w-full border-collapse text-left">
-              <thead>
-                <tr className="border-b border-border/50 bg-muted/5">
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground w-10"></th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Time
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Agent ID
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Action Type
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Layer Triggered
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Result
-                  </th>
-                  <th className="px-6 py-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Reason
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/50">
-                {logs.map((log: WebhookLogEntry) => {
-                  const isExpanded = expandedLogId === log.id;
-                  return (
-                    <React.Fragment key={log.id}>
-                      {/* Main Row */}
-                      <tr
-                        onClick={() => handleRowClick(log.id)}
-                        className={`transition-colors hover:bg-muted/10 cursor-pointer ${
-                          isExpanded ? "bg-muted/5" : ""
-                        }`}
-                      >
-                        <td className="px-6 py-4 text-center">
-                          {isExpanded ? (
-                            <ChevronUp className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-xs font-mono text-muted-foreground">
-                          {log.time}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-foreground">
-                          {log.agentId}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-foreground capitalize">
-                          {log.actionType}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
-                          {log.layerTriggered}
-                        </td>
-                        <td className="whitespace-nowrap px-6 py-4">
-                          <ResultBadge result={log.result} />
-                        </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground truncate max-w-[200px]" title={log.reason}>
-                          {log.reason}
-                        </td>
-                      </tr>
-
-                      {/* Expanded Raw Output Row */}
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-4 bg-[#080b0a]/50 border-t border-border/30">
-                            <div className="space-y-2.5">
-                              <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                <span className="font-semibold text-white">RAW AGENT OUTPUT VALIDATED</span>
-                                <span>Layer: {log.layerTriggered}</span>
-                              </div>
-                              <ExpandedCodeBlock code={log.outputContent} />
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+      {/* Table */}
+      <div style={{ border: line, borderRadius: 14, background: panel, overflow: "hidden" }}>
+        <div className="ax-mono" style={{ display: "grid", gridTemplateColumns: COLS, padding: "11px 18px", borderBottom: line, background: "#0d100f", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#46534d" }}>
+          <span></span><span>TIME</span><span>AGENT ID</span><span>ACTION</span><span>LAYER</span><span>RESULT</span><span>REASON</span>
         </div>
 
-        {/* Pagination Footer */}
+        {isLoading ? (
+          <div style={{ padding: 40, textAlign: "center", color: "#5b6b64", font: "400 12px/1 var(--font-geist-sans)" }}>Loading…</div>
+        ) : logs.length === 0 ? (
+          <div style={{ padding: 60, textAlign: "center", color: "#5b6b64", font: "400 13px/1 var(--font-geist-sans)" }}>No logs match your filters.</div>
+        ) : (
+          logs.map((log) => {
+            const expanded = expandedLogId === log.id;
+            const vc = verdictColor(log.result);
+            return (
+              <React.Fragment key={log.id}>
+                <div onClick={() => setExpandedLogId(expanded ? null : log.id)}
+                  style={{ display: "grid", gridTemplateColumns: COLS, padding: "13px 18px", borderBottom: "1px solid rgba(140,255,190,.05)", alignItems: "center", cursor: "pointer", background: expanded ? "rgba(55,227,155,.03)" : log.result === "BLOCK" ? "rgba(255,95,86,.04)" : "transparent" }}>
+                  {expanded ? <ChevronUp style={{ width: 13, height: 13, color: "#8b9a93" }} /> : <ChevronDown style={{ width: 13, height: 13, color: "#46534d" }} />}
+                  <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>{(log.time || "").slice(-8)}</span>
+                  <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#e8edea", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 8 }}>{log.agentId}</span>
+                  <span style={{ font: "500 12px/1 var(--font-geist-sans)", textTransform: "capitalize" }}>{log.actionType}</span>
+                  <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#8b9a93" }}>{log.layerTriggered}</span>
+                  <span><span className="ax-mono" style={{ font: `700 9px/1 ${mono}`, color: vc, background: vc + "1a", border: `1px solid ${vc}47`, borderRadius: 5, padding: "4px 6px" }}>{verdictLabel(log.result)}</span></span>
+                  <span style={{ font: "400 12px/1.3 var(--font-geist-sans)", color: "#8b9a93", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{log.reason}</span>
+                </div>
+                {expanded && (
+                  <div style={{ padding: "0 18px 16px", borderBottom: "1px solid rgba(140,255,190,.05)", background: log.result === "BLOCK" ? "rgba(255,95,86,.04)" : "rgba(55,227,155,.02)" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 14 }} className="ax-log-detail">
+                      <div style={{ border: line, borderRadius: 10, background: "#080b0a", overflow: "hidden" }}>
+                        <div className="ax-mono" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", borderBottom: "1px solid rgba(140,255,190,.08)", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#5b6b64" }}>
+                          <span>RAW AGENT OUTPUT</span>
+                          <CopyBtn text={log.outputContent} />
+                        </div>
+                        <pre className="ax-mono" style={{ margin: 0, padding: 13, font: `400 11px/1.7 ${mono}`, color: "#8b9a93", overflow: "auto", whiteSpace: "pre-wrap", maxHeight: 200 }}>{log.outputContent}</pre>
+                      </div>
+                      <div style={{ border: line, borderRadius: 10, background: "#080b0a", padding: 13 }}>
+                        <div className="ax-mono" style={{ font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#5b6b64" }}>DECISION</div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 12, font: `500 11px/1 ${mono}` }}>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "#8b9a93" }}>layer</span><span style={{ color: "#c3cec8" }}>{log.layerTriggered}</span></div>
+                          <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ color: "#8b9a93" }}>result</span><span style={{ color: vc }}>{log.result}</span></div>
+                        </div>
+                        <div className="ax-mono" style={{ marginTop: 13, paddingTop: 11, borderTop: "1px solid rgba(140,255,190,.08)", font: `400 10.5px/1.5 ${mono}`, color: "#5b6b64" }}>{log.reason}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })
+        )}
+
+        {/* Pagination */}
         {logs.length > 0 && (
-          <div className="flex items-center justify-between border-t border-border/50 bg-[#0a0d0c]/10 px-6 py-4 text-sm">
-            <span className="text-xs text-muted-foreground">
-              Showing <span className="font-semibold text-white">{logs.length}</span> logs of{" "}
-              <span className="font-semibold text-white">{pagination.totalCount}</span> total entries
-            </span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                disabled={currentPage === 1}
-                className="rounded-md border border-border p-1.5 hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                title="Previous Page"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="px-3 text-xs text-muted-foreground">
-                Page <span className="text-white font-semibold">{currentPage}</span> of{" "}
-                <span className="text-white font-semibold">{pagination.totalPages}</span>
-              </span>
-              <button
-                onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))}
-                disabled={currentPage === pagination.totalPages}
-                className="rounded-md border border-border p-1.5 hover:bg-muted disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                title="Next Page"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 18px", borderTop: line, background: "#0d100f" }}>
+            <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>Showing {logs.length} of {pagination.totalCount.toLocaleString()}</span>
+            <div className="ax-mono" style={{ display: "flex", alignItems: "center", gap: 8, font: `500 11px/1 ${mono}`, color: "#8b9a93" }}>
+              <button onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))} disabled={currentPage === 1} style={{ border: line, borderRadius: 7, padding: "6px 8px", display: "flex", background: "transparent", color: "inherit", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.4 : 1 }}><ChevronLeft style={{ width: 13, height: 13 }} /></button>
+              <span>page <span style={{ color: "#e8edea" }}>{currentPage}</span> / {pagination.totalPages}</span>
+              <button onClick={() => setCurrentPage((p) => Math.min(p + 1, pagination.totalPages))} disabled={currentPage === pagination.totalPages} style={{ border: line, borderRadius: 7, padding: "6px 8px", display: "flex", background: "transparent", color: "inherit", cursor: currentPage === pagination.totalPages ? "not-allowed" : "pointer", opacity: currentPage === pagination.totalPages ? 0.4 : 1 }}><ChevronRight style={{ width: 13, height: 13 }} /></button>
             </div>
           </div>
         )}
       </div>
+
+      <style>{`@media (max-width: 900px){ .ax-log-detail { grid-template-columns: 1fr !important; } }`}</style>
     </div>
   );
 }
 
-// Result badge renderer
-function ResultBadge({ result }: { result: "PASS" | "BLOCK" | "ASYNC FLAG" }) {
-  const styles = {
-    PASS: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-    BLOCK: "bg-red-500/10 text-red-400 border-red-500/20",
-    "ASYNC FLAG": "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${styles[result]}`}
-    >
-      {result}
-    </span>
-  );
-}
-
-// Expanded code block component with syntax highlighting & macOS style header
-function ExpandedCodeBlock({ code }: { code: string }) {
+function CopyBtn({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-[#080b0a] shadow-inner relative">
-      <div className="flex items-center justify-between border-b border-border/80 px-4 py-2 bg-muted/5">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
-          <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/80" />
-          <div className="h-2.5 w-2.5 rounded-full bg-green-500/80" />
-        </div>
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-1.5 rounded border border-border/50 bg-secondary/50 px-2 py-0.5 text-xs text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
-        >
-          {copied ? (
-            <>
-              <Check className="h-3 w-3 text-primary" />
-              <span className="text-primary">Copied</span>
-            </>
-          ) : (
-            <>
-              <Copy className="h-3 w-3" />
-              <span>Copy</span>
-            </>
-          )}
-        </button>
-      </div>
-      <pre className="overflow-x-auto p-4 font-mono text-[12px] leading-relaxed bg-[#080b0a] text-muted-foreground">
-        <code>{code}</code>
-      </pre>
-    </div>
-  );
-}
-
-// Skeleton loader
-function LogsTableLoader() {
-  return (
-    <div className="p-6 space-y-4">
-      {[...Array(6)].map((_, i) => (
-        <div key={i} className="flex gap-4 animate-pulse">
-          <div className="h-4 w-4 rounded bg-muted/20" />
-          <div className="h-4 w-24 rounded bg-muted/20" />
-          <div className="h-4 w-28 rounded bg-muted/20" />
-          <div className="h-4 w-16 rounded bg-muted/20" />
-          <div className="h-4 flex-1 rounded bg-muted/20" />
-        </div>
-      ))}
-    </div>
+    <button onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1500); }}
+      className="ax-mono" style={{ display: "flex", alignItems: "center", gap: 5, background: "none", border: "none", color: "#8b9a93", cursor: "pointer", font: "600 9px/1 var(--font-geist-mono)", letterSpacing: ".1em" }}>
+      {copied ? <Check style={{ width: 12, height: 12, color: "#37e39b" }} /> : <Copy style={{ width: 12, height: 12 }} />}{copied ? "COPIED" : "COPY"}
+    </button>
   );
 }

@@ -222,50 +222,31 @@ export default function BillingPage() {
 
       <div className="grid gap-6 md:grid-cols-3">
         {/* Plan usage card */}
-        <div className="md:col-span-2 rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-white">Current Subscription</h3>
-            <span className="rounded-full bg-primary/10 border border-primary/20 px-2.5 py-0.5 text-xs font-semibold text-primary">
-              {userPlan} Tier
-            </span>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 text-sm pt-2">
+        <div className="md:col-span-2 rounded-xl p-6" style={{ border: "1px solid rgba(140,255,190,.1)", background: "#0a0d0c" }}>
+          <div className="flex items-start justify-between">
             <div>
-              <p className="text-muted-foreground">Current monthly requests</p>
-              <p className="mt-1.5 text-xl font-bold text-white">
-                {monthlyRequests.toLocaleString()}{" "}
-                <span className="text-xs text-muted-foreground font-normal">
-                  / {requestLimit === 10000000 ? "Unlimited" : requestLimit.toLocaleString()} validation limit
+              <div className="ax-mono" style={{ font: "600 9.5px/1 var(--font-geist-mono)", letterSpacing: ".16em", color: "#5b6b64" }}>THIS BILLING PERIOD</div>
+              <div className="mt-3.5 flex items-baseline gap-2">
+                <span style={{ font: "700 40px/1 var(--font-geist-sans)", letterSpacing: "-.04em" }}>{monthlyRequests.toLocaleString()}</span>
+                <span className="ax-mono" style={{ font: "400 14px/1 var(--font-geist-mono)", color: "#5b6b64" }}>
+                  / {requestLimit >= 999999999 ? "∞" : requestLimit.toLocaleString()} validations
                 </span>
-              </p>
-            </div>
-            {userPlan === "Pro" && (
-              <div>
-                <p className="text-muted-foreground">Pricing / Period</p>
-                <p className="mt-1.5 text-xl font-bold text-white">
-                  ₹2,999 <span className="text-xs text-muted-foreground font-normal">/ month</span>
-                </p>
               </div>
-            )}
+            </div>
+            <span className="ax-mono" style={{ font: "600 9px/1 var(--font-geist-mono)", letterSpacing: ".12em", color: "#37e39b", border: "1px solid rgba(55,227,155,.28)", borderRadius: 5, padding: "5px 7px", textTransform: "uppercase" }}>{userPlan}</span>
           </div>
 
-          <div className="space-y-1.5 pt-2">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>Limit usage</span>
-              <span className="font-mono">{usagePercentage.toFixed(1)}%</span>
-            </div>
-            <div className="h-2 overflow-hidden rounded-full bg-muted">
-              <div
-                className="h-full rounded-full bg-primary transition-all duration-500"
-                style={{ width: `${usagePercentage}%` }}
-              />
-            </div>
+          <div className="mt-6" style={{ height: 6, borderRadius: 999, background: "#141a17", overflow: "hidden" }}>
+            <div style={{ width: `${usagePercentage}%`, height: "100%", background: "#37e39b", transition: "width .5s" }} />
+          </div>
+          <div className="ax-mono mt-2.5 flex items-center justify-between" style={{ font: "500 10.5px/1 var(--font-geist-mono)", color: "#5b6b64" }}>
+            <span>{usagePercentage.toFixed(1)}% used</span>
+            {userPlan === "Pro" && <span>₹2,999 / month · renews monthly</span>}
           </div>
         </div>
 
         {/* Quick billing stats / action helper */}
-        <div className="md:col-span-1 rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 flex flex-col justify-between">
+        <div className="md:col-span-1 rounded-xl p-6 flex flex-col justify-between" style={{ border: "1px solid rgba(140,255,190,.1)", background: "#0a0d0c" }}>
           <div>
             <h4 className="text-sm font-semibold text-white">Plan Actions</h4>
             <p className="mt-2 text-xs text-muted-foreground leading-relaxed">
@@ -311,7 +292,7 @@ export default function BillingPage() {
             <div className="rounded-xl border border-border bg-[#0a0d0c]/20 p-6 space-y-4">
               <h4 className="text-base font-bold text-white">Free Plan</h4>
               <p className="text-3xl font-black text-white">
-                $0 <span className="text-xs text-muted-foreground font-normal">forever</span>
+                ₹0 <span className="text-xs text-muted-foreground font-normal">forever</span>
               </p>
               <ul className="text-xs text-muted-foreground space-y-2.5 pt-2">
                 <li className="flex items-center gap-2">
