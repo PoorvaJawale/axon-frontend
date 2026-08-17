@@ -1,62 +1,120 @@
-import { Shield, Brain, Bell } from "lucide-react";
+"use client";
 
-const features = [
+import { Braces, Brain, BellRing } from "lucide-react";
+
+const mono = "var(--font-geist-mono)";
+
+const layers = [
   {
-    icon: Shield,
-    title: "Schema Validation",
-    description:
-      "Define strict JSON schemas for your AI outputs. Catch malformed data before it corrupts your database or breaks your UI.",
+    n: "01",
+    color: "#37e39b",
+    icon: <Braces style={{ width: 20, height: 20 }} />,
+    title: "Schema validation",
+    body: "Strict JSON contracts per action type. Malformed data never touches your database or your UI.",
+    tags: ["strict types", "versioned", "<5ms"],
   },
   {
-    icon: Brain,
-    title: "Semantic Judge Model",
-    description:
-      "Our AI judge evaluates outputs for correctness, safety, and alignment with your business rules. Goes beyond syntax to understand intent.",
+    n: "02",
+    color: "#a78bfa",
+    icon: <Brain style={{ width: 20, height: 20 }} />,
+    title: "Semantic judge",
+    body: "A judge model scores correctness, safety and intent alignment. Syntax-valid nonsense still gets caught.",
+    tags: ["confidence score", "custom rubric"],
   },
   {
-    icon: Bell,
-    title: "Real-time Alerts",
-    description:
-      "Get instant notifications when validation fails. Integrate with Slack, PagerDuty, or webhooks for immediate incident response.",
+    n: "03",
+    color: "#ffb347",
+    icon: <BellRing style={{ width: 20, height: 20 }} />,
+    title: "Policy & alerting",
+    body: "Your business rules as code. Blocks route to Slack, PagerDuty or a webhook with the full payload attached.",
+    tags: ["Slack", "PagerDuty", "webhook"],
   },
 ];
 
 export function Features() {
   return (
-    <section id="features" className="relative px-6 py-24">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Enterprise-grade validation
-          </h2>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Three layers of protection between your AI agents and production
-            systems.
+    <section id="features" style={{ padding: "110px 40px 0" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+        <div
+          className="ax-feat-head"
+          style={{
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "space-between",
+            gap: 40,
+            paddingBottom: 28,
+            borderBottom: "1px solid var(--ax-line)",
+          }}
+        >
+          <div>
+            <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}>
+              01 — THE STACK
+            </div>
+            <h2 style={{ margin: "16px 0 0", font: "700 44px/1.05 var(--font-geist-sans)", letterSpacing: "-.035em" }}>
+              Three layers, one call
+            </h2>
+          </div>
+          <p style={{ maxWidth: 360, margin: 0, font: "400 15px/1.6 var(--font-geist-sans)", color: "#8b9a93" }}>
+            Each layer fails closed. An output only executes when all three agree, and every
+            decision is written to an immutable log.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card/50 p-8 backdrop-blur-sm transition-all hover:border-primary/50 hover:bg-card"
-            >
-              {/* Glow effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-
-              <div className="relative z-10">
-                <div className="mb-6 inline-flex rounded-xl bg-primary/10 p-3">
-                  <feature.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="mb-3 text-xl font-semibold text-foreground">
-                  {feature.title}
-                </h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+        <div
+          className="ax-feat-grid"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3,1fr)",
+            gap: 1,
+            marginTop: 1,
+            background: "var(--ax-line)",
+          }}
+        >
+          {layers.map((l) => (
+            <div key={l.n} style={{ background: "#070908", padding: "36px 30px 34px" }}>
+              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+                <span
+                  className="ax-mono"
+                  style={{ font: `700 52px/1 ${mono}`, color: l.color + "38", letterSpacing: "-.04em" }}
+                >
+                  {l.n}
+                </span>
+                <span style={{ color: l.color }}>{l.icon}</span>
+              </div>
+              <h3 style={{ margin: "26px 0 0", font: "700 21px/1.2 var(--font-geist-sans)", letterSpacing: "-.02em" }}>
+                {l.title}
+              </h3>
+              <p style={{ margin: "12px 0 0", font: "400 14px/1.65 var(--font-geist-sans)", color: "#8b9a93" }}>
+                {l.body}
+              </p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 20 }}>
+                {l.tags.map((t) => (
+                  <span
+                    key={t}
+                    className="ax-mono"
+                    style={{
+                      font: `500 10px/1 ${mono}`,
+                      color: "#8b9a93",
+                      border: "1px solid rgba(140,255,190,.12)",
+                      borderRadius: 5,
+                      padding: "5px 7px",
+                    }}
+                  >
+                    {t}
+                  </span>
+                ))}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 860px) {
+          .ax-feat-grid { grid-template-columns: 1fr !important; }
+          .ax-feat-head { flex-direction: column; align-items: flex-start !important; }
+        }
+      `}</style>
     </section>
   );
 }

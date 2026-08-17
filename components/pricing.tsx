@@ -4,51 +4,51 @@ import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
 
+const mono = "var(--font-geist-mono)";
+
 const plans = [
   {
     name: "Free",
+    tag: "FREE",
     price: "₹0",
     period: "forever",
-    description: "Perfect for testing and small projects",
-    features: [
-      "1,000 validations/month",
-      "Basic schema validation",
-      "Community support",
-      "7-day log retention",
-    ],
-    cta: "Get Started",
+    description: "For testing and small projects.",
+    features: ["1,000 validations/month", "Schema validation", "7-day log retention", "Community support"],
+    cta: "Get started",
     highlighted: false,
   },
   {
     name: "Pro",
+    tag: "PRO",
     price: "₹2,999",
     period: "/month",
-    description: "For growing teams and production workloads",
+    description: "Production workloads with real traffic.",
     features: [
       "50,000 validations/month",
       "Semantic judge model",
       "Real-time alerts",
-      "Priority support",
-      "30-day log retention",
       "Custom schemas",
+      "30-day log retention",
+      "Priority support",
     ],
-    cta: "Start Free Trial",
+    cta: "Start free trial",
     highlighted: true,
   },
   {
     name: "Enterprise",
+    tag: "ENTERPRISE",
     price: "Custom",
     period: "",
-    description: "For large-scale deployments with custom needs",
+    description: "Regulated environments and on-premise.",
     features: [
       "Unlimited validations",
       "Custom judge models",
       "SLA guarantee",
-      "Dedicated support",
-      "Unlimited log retention",
       "On-premise deployment",
+      "Unlimited retention",
+      "Dedicated support",
     ],
-    cta: "Contact Sales",
+    cta: "Contact sales",
     highlighted: false,
   },
 ];
@@ -58,85 +58,85 @@ export function Pricing() {
   const router = useRouter();
 
   const handlePlanClick = (planName: string) => {
-    if (planName === "Free") {
-      if (isSignedIn) {
-        router.push("/dashboard");
-      } else {
-        router.push("/sign-up");
-      }
-    } else if (planName === "Pro") {
-      if (isSignedIn) {
-        router.push("/dashboard/billing");
-      } else {
-        router.push("/sign-up");
-      }
-    } else if (planName === "Enterprise") {
-      router.push("/enterprise-contact");
-    }
+    if (planName === "Free") router.push(isSignedIn ? "/dashboard" : "/sign-up");
+    else if (planName === "Pro") router.push(isSignedIn ? "/dashboard/billing" : "/sign-up");
+    else router.push("/enterprise-contact");
   };
 
   return (
-    <section id="pricing" className="relative px-6 py-24">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-16 text-center">
-          <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Simple, transparent pricing
+    <section id="pricing" style={{ padding: "110px 40px 0" }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto" }}>
+        <div style={{ textAlign: "center" }}>
+          <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}>
+            03 — PRICING
+          </div>
+          <h2 style={{ margin: "16px 0 0", font: "700 44px/1.05 var(--font-geist-sans)", letterSpacing: "-.035em" }}>
+            Priced per validation, not per seat
           </h2>
-          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-            Start free and scale as you grow. No hidden fees.
-          </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div
+          className="ax-price-grid"
+          style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 44, alignItems: "start" }}
+        >
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative overflow-hidden rounded-2xl border p-8 transition-all ${
+              style={
                 plan.highlighted
-                  ? "border-primary bg-card shadow-lg shadow-primary/10"
-                  : "border-border bg-card/50 hover:border-border/80"
-              }`}
+                  ? {
+                      position: "relative",
+                      border: "1px solid rgba(55,227,155,.42)",
+                      borderRadius: 14,
+                      background: "linear-gradient(180deg,rgba(55,227,155,.07),#0a0d0c 55%)",
+                      padding: 28,
+                      boxShadow: "0 0 0 4px rgba(55,227,155,.06),0 30px 70px -34px rgba(55,227,155,.3)",
+                    }
+                  : { border: "1px solid var(--ax-line)", borderRadius: 14, background: "#0a0d0c", padding: 28 }
+              }
             >
               {plan.highlighted && (
-                <div className="absolute right-4 top-4 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-                  Popular
+                <div
+                  className="ax-mono"
+                  style={{
+                    position: "absolute",
+                    right: 22,
+                    top: -11,
+                    font: `700 9px/1 ${mono}`,
+                    letterSpacing: ".16em",
+                    color: "#04150d",
+                    background: "#37e39b",
+                    borderRadius: 5,
+                    padding: "6px 9px",
+                  }}
+                >
+                  MOST TEAMS
                 </div>
               )}
-
-              <div className="mb-6">
-                <h3 className="mb-2 text-xl font-semibold text-foreground">
-                  {plan.name}
-                </h3>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  <span className="text-muted-foreground">{plan.period}</span>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {plan.description}
-                </p>
+              <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: plan.highlighted ? "#37e39b" : "#5b6b64" }}>
+                {plan.tag}
               </div>
-
-              <ul className="mb-8 space-y-3">
-                {plan.features.map((feature) => (
-                  <li
-                    key={feature}
-                    className="flex items-center gap-3 text-sm text-muted-foreground"
-                  >
-                    <Check className="h-4 w-4 shrink-0 text-primary" />
-                    {feature}
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 18 }}>
+                <span style={{ font: "700 40px/1 var(--font-geist-sans)", letterSpacing: "-.04em" }}>{plan.price}</span>
+                {plan.period && <span className="ax-mono" style={{ font: `400 13px/1 ${mono}`, color: "#5b6b64" }}>{plan.period}</span>}
+              </div>
+              <p style={{ margin: "12px 0 0", font: "400 13px/1.55 var(--font-geist-sans)", color: "#8b9a93" }}>{plan.description}</p>
+              <div style={{ height: 1, background: plan.highlighted ? "rgba(140,255,190,.14)" : "var(--ax-line)", margin: "22px 0" }} />
+              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 11, font: "400 13px/1.4 var(--font-geist-sans)", color: plan.highlighted ? "#c3cec8" : "#8b9a93" }}>
+                {plan.features.map((f) => (
+                  <li key={f} style={{ display: "flex", gap: 9 }}>
+                    <Check style={{ width: 15, height: 15, color: "#37e39b", flex: "none" }} />
+                    {f}
                   </li>
                 ))}
               </ul>
-
               <button
                 onClick={() => handlePlanClick(plan.name)}
-                className={`block w-full rounded-lg py-3 text-center text-sm font-medium transition-colors cursor-pointer ${
+                style={
                   plan.highlighted
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : "border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
+                    ? { width: "100%", marginTop: 26, border: "none", borderRadius: 10, background: "#37e39b", color: "#04150d", font: "700 13px/1 var(--font-geist-sans)", padding: 14, cursor: "pointer" }
+                    : { width: "100%", marginTop: 26, border: "1px solid rgba(140,255,190,.16)", borderRadius: 10, background: "#0f1312", color: "#e8edea", font: "600 13px/1 var(--font-geist-sans)", padding: 13, cursor: "pointer" }
+                }
               >
                 {plan.cta}
               </button>
@@ -144,6 +144,12 @@ export function Pricing() {
           ))}
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 860px) {
+          .ax-price-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
     </section>
   );
 }
