@@ -13,7 +13,7 @@ export function Footer() {
   return (
     <>
       {/* Security strip */}
-      <section id="security" style={{ padding: "96px 40px 0" }}>
+      <section id="security" style={{ padding: "64px 40px 0" }}>
         <div
           className="ax-sec-bar"
           style={{

@@ -17,7 +17,7 @@ export function Hero() {
   };
 
   return (
-    <section style={{ position: "relative", overflow: "hidden", padding: "96px 40px 0" }}>
+    <section style={{ position: "relative", overflow: "hidden", padding: "52px 40px 64px" }}>
       {/* grid + glow */}
       <div
         style={{
@@ -86,8 +86,8 @@ export function Hero() {
           </div>
           <h1
             style={{
-              margin: "26px 0 0",
-              font: "800 68px/.96 var(--font-geist-sans)",
+              margin: "18px 0 0",
+              font: "800 58px/.98 var(--font-geist-sans)",
               letterSpacing: "-.045em",
               textWrap: "balance",
             }}
@@ -97,9 +97,9 @@ export function Hero() {
           </h1>
           <p
             style={{
-              margin: "24px 0 0",
+              margin: "18px 0 0",
               maxWidth: 508,
-              font: "400 17px/1.6 var(--font-geist-sans)",
+              font: "400 16px/1.55 var(--font-geist-sans)",
               color: "#8b9a93",
             }}
           >
@@ -107,7 +107,7 @@ export function Hero() {
             passes schema validation, a semantic judge, and your own policy rules before
             it is allowed to execute.
           </p>
-          <div style={{ display: "flex", gap: 12, marginTop: 34 }}>
+          <div style={{ display: "flex", gap: 12, marginTop: 26 }}>
             <button
               onClick={handleGetApiKey}
               style={{
@@ -149,7 +149,7 @@ export function Hero() {
               display: "grid",
               gridTemplateColumns: "repeat(3,1fr)",
               gap: 1,
-              marginTop: 52,
+              marginTop: 32,
               background: "var(--ax-line)",
               border: "1px solid var(--ax-line)",
               borderRadius: 12,

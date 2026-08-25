@@ -27,7 +27,7 @@ const steps = [
 
 export function CodeSection() {
   return (
-    <section style={{ padding: "110px 40px 0" }}>
+    <section style={{ padding: "72px 40px 0" }}>
       <div
         className="ax-int-grid"
         style={{

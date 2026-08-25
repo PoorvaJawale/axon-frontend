@@ -64,7 +64,7 @@ export function Pricing() {
   };
 
   return (
-    <section id="pricing" style={{ padding: "110px 40px 0" }}>
+    <section id="pricing" style={{ padding: "72px 40px 0" }}>
       <div style={{ maxWidth: 1240, margin: "0 auto" }}>
         <div style={{ textAlign: "center" }}>
           <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}>

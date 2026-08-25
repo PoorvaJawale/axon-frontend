@@ -33,7 +33,7 @@ const layers = [
 
 export function Features() {
   return (
-    <section id="features" style={{ padding: "110px 40px 0" }}>
+    <section id="features" style={{ padding: "72px 40px 0" }}>
       <div style={{ maxWidth: 1240, margin: "0 auto" }}>
         <div
           className="ax-feat-head"
