@@ -32,7 +32,7 @@ export default function StatusPage() {
     <div className="flex min-h-screen flex-col" style={{ background: "#070908" }}>
       <Header />
       <main style={{ flex: 1, animation: "axRise .35s ease both" }}>
-        <div style={{ maxWidth: 880, margin: "0 auto", padding: "120px 30px 90px", display: "flex", flexDirection: "column", gap: 26 }}>
+        <div style={{ maxWidth: 880, margin: "0 auto", padding: "48px 30px 64px", display: "flex", flexDirection: "column", gap: 26 }}>
           <div>
             <h1 style={{ margin: 0, font: "700 38px/1.08 var(--font-geist-sans)", letterSpacing: "-.04em" }}>System status</h1>
             <p style={{ margin: "10px 0 0", font: "400 14px/1.5 var(--font-geist-sans)", color: "#8b9a93" }}>Live health of every Axon service.</p>

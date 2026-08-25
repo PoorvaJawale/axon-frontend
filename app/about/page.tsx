@@ -11,7 +11,7 @@ export default function AboutPage() {
     <div className="flex min-h-screen flex-col bg-[#000000] text-[#ffffff]">
       <Header />
 
-      <main className="flex-1 pt-32 pb-24 px-6 relative z-10">
+      <main className="flex-1 pt-12 pb-16 px-6 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#37e39b]/5 blur-[100px]" />
