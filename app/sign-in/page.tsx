@@ -29,7 +29,7 @@ export default function SignInPage() {
     <div className="flex min-h-screen flex-col bg-[#000000] text-[#ffffff]">
       <Header />
 
-      <div className="flex flex-1 items-center justify-center px-4 pt-32 pb-16 relative z-10">
+      <div className="flex flex-1 items-center justify-center px-4 pt-12 pb-12 relative z-10">
         {/* Background glow */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-1/2 top-1/2 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#37e39b]/5 blur-[80px]" />
