@@ -54,7 +54,7 @@ export default function DashboardPage() {
       {/* Stat cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "rgba(140,255,190,.09)", border: line, borderRadius: 14, overflow: "hidden" }} className="ax-stat-grid">
         <StatCard label="TOTAL VALIDATIONS" value={stats.total} icon={<Activity style={{ width: 15, height: 15, color: "#5b6b64" }} />} loading={logsLoading}>
-          <MiniBars />
+          <ProportionBar passed={stats.passed} blocked={stats.blocked} flags={stats.asyncFlags} />
         </StatCard>
         <StatCard label="PASSED" value={stats.passed} valueColor="#37e39b" icon={<CircleCheck style={{ width: 15, height: 15, color: "#37e39b" }} />} loading={logsLoading}>
           <Meter pct={passPct} color="#37e39b" note={`${passPct}% of traffic`} />
@@ -168,14 +168,22 @@ function Meter({ pct, color, note }: { pct: number; color: string; note: string 
   );
 }
 
-function MiniBars() {
-  const heights = [38, 52, 44, 68, 58, 82, 71, 94];
+function ProportionBar({ passed, blocked, flags }: { passed: number; blocked: number; flags: number }) {
+  const total = passed + blocked + flags || 1;
+  const seg = (n: number) => `${(n / total) * 100}%`;
   return (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 26 }}>
-      {heights.map((h, i) => (
-        <div key={i} style={{ flex: 1, height: `${h}%`, background: i === heights.length - 1 ? "#37e39b" : h > 70 ? "#2b3a33" : "#1f2a25", borderRadius: 2, transformOrigin: "bottom", animation: `axBar .7s ease ${i * 0.04}s both` }} />
-      ))}
-    </div>
+    <>
+      <div style={{ display: "flex", height: 6, borderRadius: 999, overflow: "hidden", background: "#141a17" }}>
+        {passed > 0 && <div style={{ width: seg(passed), background: "#37e39b" }} />}
+        {blocked > 0 && <div style={{ width: seg(blocked), background: "#ff5f56" }} />}
+        {flags > 0 && <div style={{ width: seg(flags), background: "#ffb347" }} />}
+      </div>
+      <div className="ax-mono" style={{ display: "flex", gap: 12, marginTop: 9, font: "500 9px/1 var(--font-geist-mono)", color: "#5b6b64" }}>
+        <span><span style={{ color: "#37e39b" }}>■</span> pass</span>
+        <span><span style={{ color: "#ff5f56" }}>■</span> block</span>
+        <span><span style={{ color: "#ffb347" }}>■</span> flag</span>
+      </div>
+    </>
   );
 }
 

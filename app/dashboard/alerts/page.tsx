@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import useSWR from "swr";
-import { Check, Copy, ChevronDown, Hash, Siren, ShieldPlus } from "lucide-react";
+import { Check, ShieldPlus } from "lucide-react";
 
 type Alert = {
   id: string;
@@ -112,10 +112,12 @@ export default function AlertsPage() {
                 </div>
                 <div style={{ padding: 20, display: "flex", flexDirection: "column", gap: 16 }}>
                   <div>
-                    <div className="ax-mono" style={{ font: `600 9px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}>DISPATCHED TO</div>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 11, font: `500 11px/1 ${mono}`, color: "#8b9a93" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: 7 }}><Hash style={{ width: 12, height: 12, color: "#37e39b" }} />#sec-ops · Slack</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: 7 }}><Siren style={{ width: 12, height: 12, color: "#37e39b" }} />webhook · dispatched</span>
+                    <div className="ax-mono" style={{ font: `600 9px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}>DETAILS</div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 12, font: `500 11px/1 ${mono}`, color: "#8b9a93" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span>severity</span><span style={{ color: sevColor(featured.severity) }}>{featured.severity}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span>action</span><span style={{ color: "#c3cec8" }}>{featured.actionType}</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span>verdict</span><span style={{ color: "#ff5f56" }}>BLOCK</span></div>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}><span>status</span><span style={{ color: featured.reviewed ? "#37e39b" : "#ffb347" }}>{featured.reviewed ? "reviewed" : "unreviewed"}</span></div>
                     </div>
                   </div>
                   <button onClick={() => handleMarkAsReviewed(featured.id, !featured.reviewed)} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, border: "1px solid rgba(140,255,190,.14)", borderRadius: 8, background: "#0f1312", color: "#c3cec8", font: "600 11px/1 var(--font-geist-sans)", padding: "10px", cursor: "pointer" }}>
