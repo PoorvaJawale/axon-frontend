@@ -200,11 +200,11 @@ export default function DocsPage() {
         <div className="absolute right-1/4 top-3/4 h-[600px] w-[600px] rounded-full bg-primary/5 blur-[120px]" />
       </div>
 
-      <div className="flex-1 pt-28 pb-24 relative z-10">
+      <div className="flex-1 pt-10 pb-16 relative z-10">
         <div className="mx-auto max-w-6xl px-6">
-          
+
           {/* Docs Header */}
-          <div className="mb-12 border-b border-border/50 pb-8">
+          <div className="mb-8 border-b border-border/50 pb-6">
             <div className="flex items-center gap-2 text-xs font-semibold text-primary uppercase tracking-wider mb-2">
               <Terminal className="h-4 w-4" />
               Documentation
