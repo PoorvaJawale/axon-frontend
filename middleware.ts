@@ -11,6 +11,8 @@ const isProtectedRoute = createRouteMatcher([
   "/webhook/billing-history(.*)",
   "/webhook/razorpay-subscribe(.*)",
   "/webhook/razorpay-verify(.*)",
+  "/webhook/razorpay-cancel(.*)",
+  "/webhook/subscription(.*)",
   // NOTE: /webhook/razorpay (no suffix) is Razorpay's server-to-server webhook
   // and must stay public — it authenticates via its own HMAC signature.
 ]);

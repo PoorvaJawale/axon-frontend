@@ -19,6 +19,7 @@ function fixture(options = {}) {
   const cache = {};
   const mockFetch = async (url,init={}) => {
     calls.push({type:'fetch',url,body:init.body&&JSON.parse(init.body),method:init.method||'GET'});
+    if(url.endsWith('/cancel')) return {ok:!options.cancelFailure,json:async()=>subscription};
     if(url.includes('/v1/subscriptions/')) return {ok:true,json:async()=>subscription};
     if(url.endsWith('/webhook/billing-update')) return {ok:!options.backendFailure,status:options.backendFailure?401:200,
       json:async()=>({success:true,ignored:!!options.ignored})};
@@ -30,7 +31,7 @@ function fixture(options = {}) {
     if(cache[path])return cache[path];
     const exports={};cache[path]=exports;
     const source=ts.transpileModule(fs.readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;
-    const context={exports,Buffer,AbortSignal,console:{error:()=>{}},process:{env:{
+    const context={exports,Buffer,AbortSignal,URL,console:{error:()=>{}},process:{env:{
       AXON_API_URL:'https://backend.example',AXON_SIGNUP_SECRET:'test_signup',RAZORPAY_KEY_ID:'test_key',
       RAZORPAY_KEY_SECRET:'test_secret',RAZORPAY_PLAN_ID:'plan_current',RAZORPAY_WEBHOOK_SECRET:'test_webhook'}},fetch:mockFetch,
       require(name){
@@ -117,4 +118,37 @@ test('cancellation of a different subscription cannot downgrade the current one'
 });
 test('unsigned webhook makes no provider or backend requests',async()=>{
   const f=fixture();const result=await webhook(f,'subscription.charged',false);assert.equal(result.status,401);assert.equal(f.calls.length,0);
+});
+
+const cancel = (f, body={subscriptionId:'sub_fixture',confirmed:true}) => f.load('app/webhook/razorpay-cancel/route.ts').POST({json:async()=>body});
+test('cancellation requires sign-in and explicit confirmation',async()=>{
+  const signedOut=fixture({signedOut:true});assert.equal((await cancel(signedOut)).status,401);assert.equal(signedOut.calls.length,0);
+  const f=fixture();assert.equal((await cancel(f,{subscriptionId:'sub_fixture'})).status,400);assert.equal(f.calls.length,0);
+});
+test('cancel renewal uses end-of-cycle and preserves paid entitlement',async()=>{
+  const f=fixture({metadata:{axonPlan:'pro',razorpaySubscriptionId:'sub_fixture'}});const result=await cancel(f);
+  assert.equal(result.body.success,true);assert.equal(result.body.effectiveAt,f.subscription.current_end);
+  const request=f.calls.find(c=>c.url?.endsWith('/cancel'));assert.equal(request.method,'POST');assert.equal(request.body.cancel_at_cycle_end,true);
+  assert.equal(f.metadata.axonPlan,'pro');assert(!f.calls.some(c=>c.url?.endsWith('/webhook/billing-update')));
+});
+test('another user cannot cancel a subscription',async()=>{
+  const f=fixture({subscription:{notes:{clerk_user_id:'someone_else'}}});const result=await cancel(f);assert.equal(result.status,403);
+  assert(!f.calls.some(c=>c.url?.endsWith('/cancel')));
+});
+test('scheduled cancellation repeated does not send another cancellation',async()=>{
+  const f=fixture();await cancel(f);await cancel(f);assert.equal(f.calls.filter(c=>c.url?.endsWith('/cancel')).length,1);
+});
+test('provider failure never reports cancellation success',async()=>{
+  const f=fixture({cancelFailure:true});const result=await cancel(f);assert.equal(result.status,503);assert.equal(f.metadata.razorpayCancellation,undefined);
+});
+test('legacy paid subscriptions can also stop renewal',async()=>{
+  const f=fixture({subscription:{plan_id:'plan_legacy'}});assert.equal((await cancel(f)).body.success,true);
+});
+test('already cancelled subscription returns without another provider mutation',async()=>{
+  const f=fixture({subscription:{status:'cancelled'}});const result=await cancel(f);assert.equal(result.body.alreadyCancelled,true);assert(!f.calls.some(c=>c.url?.endsWith('/cancel')));
+});
+test('scheduled cancellation remains visible after a page reload',async()=>{
+  const f=fixture({metadata:{razorpaySubscriptionId:'sub_fixture'}});await cancel(f);
+  const result=await f.load('app/webhook/subscription/route.ts').GET({url:'https://axon.example/webhook/subscription'});
+  assert.equal(result.body.subscription.cancellationScheduled,true);assert.equal(result.body.subscription.canCancel,false);
 });

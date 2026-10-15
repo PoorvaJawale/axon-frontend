@@ -274,3 +274,5 @@
  .dash-keys-page .dash-page-header { grid-template-columns: 1fr; }
  .dash-keys-page .dash-header-actions { justify-content: start; }
 }
+
+@media (max-width: 850px) { .dash-billing .dash-page-header { flex-wrap: wrap; } .dash-billing .dash-page-header > div:first-child { flex-basis: 100%; min-width: 0; } .dash-billing .dash-header-actions { width: 100%; flex-wrap: wrap; } }

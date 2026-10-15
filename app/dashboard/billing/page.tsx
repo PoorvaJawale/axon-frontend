@@ -52,6 +52,35 @@ export default function BillingPage() {
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
   
   const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [cancelLookupId, setCancelLookupId] = useState("");
+  const [cancelInputId, setCancelInputId] = useState("");
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [cancelResult, setCancelResult] = useState<{ effectiveAt: number | null; alreadyCancelled?: boolean } | null>(null);
+  const { data: subscriptionData, error: subscriptionError, isLoading: subscriptionLoading, mutate: mutateSubscription } = useSWR(
+    isCancelOpen ? `/webhook/subscription${cancelLookupId ? `?subscriptionId=${encodeURIComponent(cancelLookupId)}` : ""}` : null,
+    async (url: string) => {
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Could not load subscription");
+      return data as { subscription: { id: string; status: string; currentEnd: number | null; cancellationScheduled: boolean; canCancel: boolean } | null };
+    }, { revalidateOnFocus: false }
+  );
+  const subscription = subscriptionData?.subscription;
+  const endDate = (seconds: number | null | undefined) => seconds ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "the end of your paid period";
+  const openCancellation = () => { setCancelError(""); setCancelResult(null); setIsCancelOpen(true); void mutateSubscription(); };
+  const cancelSubscription = async () => {
+    if (!subscription?.canCancel || isCancelling) return;
+    setIsCancelling(true); setCancelError("");
+    try {
+      const response = await fetch("/webhook/razorpay-cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscriptionId: subscription.id, confirmed: true }) });
+      const data = await response.json();
+      if (!response.ok || data.success !== true) throw new Error(data.error || "Cancellation was not confirmed");
+      setCancelResult({ effectiveAt: data.effectiveAt, alreadyCancelled: data.alreadyCancelled });
+      void mutateSubscription();
+    } catch (error) { setCancelError(error instanceof Error ? error.message : "Cancellation was not confirmed. Refresh the status."); }
+    finally { setIsCancelling(false); }
+  };
 
   // Enterprise form states
   const [fullName, setFullName] = useState("");
@@ -233,7 +262,7 @@ export default function BillingPage() {
 
   return (
     <div className="dash-page dash-fit-page dash-billing">
-      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{userPlan} plan</Status><button className="dash-button" onClick={() => { setIsCheckoutSuccess(false); setPaymentNeedsReview(true); setCheckoutError(""); setIsCheckoutOpen(true); }}>Restore paid subscription</button></PageHeader>
+      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{userPlan} plan</Status><button className="dash-button" onClick={() => { setIsCheckoutSuccess(false); setPaymentNeedsReview(true); setCheckoutError(""); setIsCheckoutOpen(true); }}>Restore paid subscription</button>{userPlan === "Free" && <button className="dash-button" onClick={openCancellation}>Manage subscription</button>}</PageHeader>
       <nav className="dash-segments dash-billing-tabs" aria-label="Billing views">{[["usage", "Usage"], ["plans", "Plans"], ["history", "History"], ["enterprise", "Enterprise"]].map(([value, label]) => <button key={value} aria-pressed={billingView === value} onClick={() => setBillingView(value)}>{label}</button>)}</nav>
       <div className="dash-billing-view" tabIndex={0} role="region" aria-label={billingView === "usage" ? "Current usage" : billingView === "plans" ? "Subscription plans" : billingView === "history" ? "Payment history" : "Enterprise inquiry"}>
       {billingView === "usage" && <div className="dash-billing-overview">
@@ -241,7 +270,7 @@ export default function BillingPage() {
         <div className="dash-billing-meter"><div className="dash-section-heading"><h2>{userPlan === "Free" ? "Free validation allowance" : "Monthly validations"}</h2><Status tone={usagePercentage >= 90 ? "amber" : "green"}>{usageError ? "Unavailable" : usageLoading ? "Loading" : usagePercentage >= 90 ? "Near quota" : "Within quota"}</Status></div>
           {usageError ? <DataState error={usageError} retry={() => void mutateUsage()} title="" /> : <><div className="dash-usage-value"><strong className="dash-mono">{usageLoading ? "—" : monthlyRequests.toLocaleString()}</strong><span>of {requestLimit >= 999999999 ? "unlimited" : requestLimit.toLocaleString()} validations</span></div><div className="dash-quota-track" role="meter" aria-label={userPlan === "Free" ? "Free validations used" : "Monthly validations used"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={usagePercentage}><span style={{ transform: `scaleX(${usagePercentage / 100})`, background: usagePercentage >= 90 ? "var(--ax-amber)" : "var(--primary)" }} /></div><div className="dash-section-heading dash-small dash-muted" style={{ marginTop: 14 }}><span>{usageLoading ? "Loading usage…" : `${usagePercentage.toFixed(1)}% of ${userPlan === "Free" ? "one-time allowance" : "monthly quota"}`}</span><span>Shared across all keys</span></div></>}
         </div>
-        <div className="dash-billing-current"><h2>{userPlan} plan</h2><p>{userPlan === "Free" ? "100 one-time validations to try Axon. No monthly refill." : userPlan === "Pro" ? "5,000 monthly validations with semantic judge validation." : "Custom capacity and support for your organization."}</p><strong>{userPlan === "Free" ? "₹0" : userPlan === "Pro" ? "₹799 / month" : "Custom pricing"}</strong><div className="dash-actions">{userPlan === "Free" ? <button className="dash-button dash-button-primary" onClick={handleUpgradeClick}>Upgrade to Pro</button> : <><button className="dash-button" onClick={openSales}>Contact sales</button>{userPlan === "Pro" && <button className="dash-button dash-button-quiet" onClick={() => setIsCancelOpen(true)}>Manage subscription</button>}</>}</div></div>
+        <div className="dash-billing-current"><h2>{userPlan} plan</h2><p>{userPlan === "Free" ? "100 one-time validations to try Axon. No monthly refill." : userPlan === "Pro" ? "5,000 monthly validations with semantic judge validation." : "Custom capacity and support for your organization."}</p><strong>{userPlan === "Free" ? "₹0" : userPlan === "Pro" ? "₹799 / month" : "Custom pricing"}</strong><div className="dash-actions">{userPlan === "Free" ? <button className="dash-button dash-button-primary" onClick={handleUpgradeClick}>Upgrade to Pro</button> : <><button className="dash-button" onClick={openSales}>Contact sales</button>{userPlan === "Pro" && <button className="dash-button dash-button-quiet" onClick={openCancellation}>Manage subscription</button>}</>}</div></div>
       </section>
       </div>}
       {billingView === "plans" && <div className="dash-billing-overview">
@@ -446,7 +475,15 @@ export default function BillingPage() {
       )}
       </div>
       {isCheckoutOpen && <DashboardDialog title={isCheckoutSuccess ? "Subscription restored" : paymentNeedsReview ? "Activate your subscription" : "Upgrade to Axon Pro"} busy={isProcessingCheckout} onClose={() => setIsCheckoutOpen(false)}>{isCheckoutSuccess ? <DataState title="You're on Pro" description="Your payment was verified and your plan has been updated." /> : <><p>{paymentNeedsReview ? "Check an existing payment and finish activating Pro. This does not charge you again." : "5,000 validations per month, semantic judge validation, and longer log retention."}</p><dl className="dash-definition"><div><dt>Plan</dt><dd>Axon Pro</dd></div><div><dt>Billed monthly</dt><dd>₹799</dd></div></dl><p style={{ marginTop: 20 }}>{paymentNeedsReview ? "We will verify the subscription directly with Razorpay before updating your account." : "Renews monthly. Review the final amount in Razorpay before confirming payment."}</p>{paymentNeedsReview && <><label htmlFor="restore-subscription">Subscription ID (optional if already saved)</label><input className="dash-input" id="restore-subscription" value={recoverySubscriptionId} onChange={event => setRecoverySubscriptionId(event.target.value)} placeholder="sub_…" autoComplete="off" /><p>For an earlier payment, use its subscription ID from Razorpay.</p></>}{checkoutError && <div className="dash-field-error" role="alert">{checkoutError}</div>}<div className="dash-actions"><button className="dash-button dash-button-primary" disabled={isProcessingCheckout} onClick={() => paymentNeedsReview ? void restoreSubscription() : void handleConfirmPayment()}>{isProcessingCheckout ? "Please wait…" : paymentNeedsReview ? "Check activation — no payment" : "Continue to payment"}</button></div></>}</DashboardDialog>}
-      {isCancelOpen && <DashboardDialog title="Manage your subscription" onClose={() => setIsCancelOpen(false)}><p>Subscription cancellation isn’t connected in this dashboard yet. Contact support to request cancellation. Your current plan and billing have not changed.</p><div className="dash-actions"><button className="dash-button" onClick={() => setIsCancelOpen(false)}>Close</button><button className="dash-button dash-button-primary" onClick={() => { setIsCancelOpen(false); openSales(); }}>Contact the team</button></div></DashboardDialog>}
+      {isCancelOpen && <DashboardDialog title={cancelResult || subscription?.cancellationScheduled ? "Renewal cancelled" : "Cancel subscription"} busy={isCancelling} onClose={() => setIsCancelOpen(false)}>
+        {cancelResult ? <><p>{cancelResult.alreadyCancelled ? "Renewal is already cancelled. No further cancellation request was sent." : `Your subscription will not renew. Pro access remains available until ${endDate(cancelResult.effectiveAt)}.`}</p><div className="dash-actions"><button className="dash-button dash-button-primary" onClick={() => setIsCancelOpen(false)}>Done</button></div></> : subscriptionLoading ? <DataState loading title="Loading subscription" /> : subscriptionError ? <><p role="alert">{subscriptionError.message}</p><button className="dash-button" onClick={() => void mutateSubscription()}>Refresh status</button></> : subscription ? <>
+          <p className="dash-mono dash-small">{subscription.id}</p>
+          {subscription.cancellationScheduled ? <p>Renewal is cancelled. Pro access remains available until {endDate(subscription.currentEnd)}.</p> : subscription.canCancel ? <><p>Your subscription will stop renewing at the end of the current billing period. Pro access remains available until <strong>{endDate(subscription.currentEnd)}</strong>.</p><p>This does not refund the current payment.</p></> : <p>This subscription is {subscription.status}. No cancellation action is available for its current state.</p>}
+          {cancelError && <div className="dash-field-error" role="alert">{cancelError}</div>}
+          <div className="dash-actions"><button className="dash-button" disabled={isCancelling} onClick={() => setIsCancelOpen(false)}>{subscription.canCancel ? "Keep subscription" : "Close"}</button>{subscription.canCancel && <button className="dash-button dash-button-danger" disabled={isCancelling} onClick={() => void cancelSubscription()}>{isCancelling ? "Cancelling renewal…" : "Cancel renewal"}</button>}<button className="dash-button dash-button-quiet" disabled={isCancelling} onClick={() => void mutateSubscription()}>Refresh status</button></div>
+        </> : <p>No saved subscription was found. Enter its Razorpay subscription ID below to load it.</p>}
+        {!cancelResult && !subscriptionLoading && <details className="dash-key-help"><summary>Manage another subscription</summary><form onSubmit={event => { event.preventDefault(); setCancelError(""); setCancelLookupId(cancelInputId.trim()); }}><label htmlFor="cancel-subscription-id" style={{ marginTop: 20 }}>Load a different subscription</label><input className="dash-input" id="cancel-subscription-id" value={cancelInputId} onChange={event => setCancelInputId(event.target.value)} placeholder="sub_…" required pattern="sub_[a-zA-Z0-9]+" disabled={isCancelling} /><div className="dash-actions"><button className="dash-button" disabled={isCancelling || !cancelInputId.trim()}>Load subscription</button></div></form></details>}
+      </DashboardDialog>}
     </div>
   );
 }
