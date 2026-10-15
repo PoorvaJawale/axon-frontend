@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import useSWR from "swr";
 import { useAuth } from "@/app/context/AuthContext";
+import { dashboardFetcher, usagePercent } from "@/lib/dashboard";
 import {
   LayoutDashboard,
   ScrollText,
@@ -14,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = dashboardFetcher;
 const mono = "var(--font-geist-mono)";
 const line = "1px solid rgba(140,255,190,.09)";
 
@@ -41,17 +42,17 @@ export function Sidebar() {
   const pathname = usePathname();
   const { username, email, userPlan, logout } = useAuth();
 
-  const { data: usageData } = useSWR(`/webhook/usage`, fetcher, {
+  const { data: usageData, error: usageError } = useSWR(`/webhook/usage`, fetcher, {
     refreshInterval: 10000,
     revalidateOnFocus: true,
   });
   const monthlyRequests = usageData?.monthly_requests ?? 0;
   const requestLimit = usageData?.request_limit ?? 1000;
-  const pct = Math.min((monthlyRequests / requestLimit) * 100, 100);
+  const pct = usagePercent(monthlyRequests, requestLimit);
 
   return (
     <aside
-      className="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col"
+      className="dash-sidebar fixed left-0 top-0 z-40 flex h-screen w-64 flex-col"
       style={{ background: "#090c0b", borderRight: line }}
     >
       {/* Logo */}
@@ -67,7 +68,7 @@ export function Sidebar() {
       <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, padding: "10px 12px", overflow: "auto" }}>
         {sections.map((sec) => (
           <div key={sec.head}>
-            <div className="ax-mono" style={{ font: `600 9px/1 ${mono}`, letterSpacing: ".18em", color: "#46534d", padding: "14px 10px 6px" }}>
+            <div className="ax-mono" style={{ font: `600 9px/1 ${mono}`, letterSpacing: ".18em", color: "#8b9a93", padding: "14px 10px 6px" }}>
               {sec.head}
             </div>
             {sec.items.map((item) => {
@@ -77,6 +78,7 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -101,13 +103,13 @@ export function Sidebar() {
       {/* Quota */}
       <div style={{ padding: "12px 14px" }}>
         <div style={{ border: line, borderRadius: 11, background: "#0d100f", padding: 13 }}>
-          <div className="ax-mono" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#5b6b64" }}>
+          <div className="ax-mono" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#8b9a93" }}>
             <span>QUOTA</span>
-            <span style={{ color: "#37e39b" }}>{pct.toFixed(1)}%</span>
+            <span style={{ color: "#37e39b" }}>{usageError ? "Unavailable" : usageData ? `${pct.toFixed(1)}%` : "—"}</span>
           </div>
           <div style={{ marginTop: 9, font: "700 17px/1 var(--font-geist-sans)", letterSpacing: "-.02em" }}>
-            {monthlyRequests.toLocaleString()}{" "}
-            <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#5b6b64" }}>
+            {usageData && !usageError ? monthlyRequests.toLocaleString() : "—"}{" "}
+            <span className="ax-mono" style={{ font: `400 11px/1 ${mono}`, color: "#8b9a93" }}>
               / {requestLimit >= 999999999 ? "∞" : requestLimit.toLocaleString()}
             </span>
           </div>
@@ -126,9 +128,9 @@ export function Sidebar() {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ font: "600 11.5px/1.2 var(--font-geist-sans)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={username}>{username}</div>
-          <div className="ax-mono" style={{ font: `400 9.5px/1.2 ${mono}`, color: "#46534d", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={email}>{email}</div>
+          <div className="ax-mono" style={{ font: `400 9.5px/1.2 ${mono}`, color: "#8b9a93", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={email}>{email}</div>
         </div>
-        <button onClick={logout} title="Sign out" style={{ background: "none", border: "none", cursor: "pointer", color: "#46534d", display: "flex" }}>
+        <button onClick={logout} title="Sign out" style={{ background: "none", border: "none", cursor: "pointer", color: "#8b9a93", display: "flex" }}>
           <LogOut style={{ width: 14, height: 14 }} />
         </button>
       </div>
