@@ -6,7 +6,7 @@ const mono = "var(--font-geist-mono)";
 const cols = [
   { head: "PRODUCT", links: [["Platform", "/#features"], ["Pricing", "/#pricing"], ["Changelog", "/changelog"]] },
   { head: "RESOURCES", links: [["Docs", "/docs"], ["API reference", "/api-reference"], ["Status", "/status"]] },
-  { head: "COMPANY", links: [["About", "/about"], ["Blog", "/blog"], ["Careers", "/careers"]] },
+  { head: "COMPANY", links: [["About", "/about"], ["Blog", "/blog"]] },
 ];
 
 export function Footer() {
