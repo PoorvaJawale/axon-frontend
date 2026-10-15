@@ -41,8 +41,8 @@ export function DocsLink({ children = "Integration guide" }: { children?: ReactN
 export function DashboardDialog({ title, children, onClose, busy = false }: { title: string; children: ReactNode; onClose: () => void; busy?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => { const dialog = ref.current; const trigger = document.activeElement as HTMLElement | null; dialog?.showModal(); return () => { dialog?.close(); trigger?.focus(); }; }, []);
-  return <dialog ref={ref} className="dash-dialog" aria-label={title} onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }} onClick={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
-    <div className="dash-dialog-heading"><h2>{title}</h2><button className="dash-icon-button" disabled={busy} onClick={onClose} aria-label="Close dialog"><X size={18} /></button></div>{children}
+  return <dialog ref={ref} className="dash-dialog-layer" aria-label={title} onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }} onClick={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <div className="dash-dialog"><div className="dash-dialog-heading"><h2>{title}</h2><button className="dash-icon-button" disabled={busy} onClick={onClose} aria-label="Close dialog"><X size={18} /></button></div>{children}</div>
   </dialog>;
 }
 
