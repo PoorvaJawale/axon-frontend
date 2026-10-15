@@ -13,7 +13,14 @@ const plans = [
     price: "₹0",
     period: "forever",
     description: "For testing and small projects.",
-    features: ["1,000 validations/month", "Schema validation", "7-day log retention", "Community support"],
+    features: [
+      "1,000 validations/month",
+      "Schema validation",
+      "Real-time developer dashboard",
+      "REST API & webhooks",
+      "7-day log retention",
+      "Community support",
+    ],
     cta: "Get started",
     highlighted: false,
   },
@@ -77,23 +84,30 @@ export function Pricing() {
 
         <div
           className="ax-price-grid"
-          style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 44, alignItems: "start" }}
+          style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, marginTop: 44, alignItems: "stretch" }}
         >
           {plans.map((plan) => (
             <div
               key={plan.name}
-              style={
-                plan.highlighted
+              style={{
+                position: "relative",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                height: "100%",
+                borderRadius: 14,
+                padding: 28,
+                ...(plan.highlighted
                   ? {
-                      position: "relative",
                       border: "1px solid rgba(55,227,155,.42)",
-                      borderRadius: 14,
                       background: "linear-gradient(180deg,rgba(55,227,155,.07),#0a0d0c 55%)",
-                      padding: 28,
                       boxShadow: "0 0 0 4px rgba(55,227,155,.06),0 30px 70px -34px rgba(55,227,155,.3)",
                     }
-                  : { border: "1px solid var(--ax-line)", borderRadius: 14, background: "#0a0d0c", padding: 28 }
-              }
+                  : {
+                      border: "1px solid var(--ax-line)",
+                      background: "#0a0d0c",
+                    }),
+              }}
             >
               {plan.highlighted && (
                 <div
@@ -113,29 +127,31 @@ export function Pricing() {
                   MOST TEAMS
                 </div>
               )}
-              <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: plan.highlighted ? "#37e39b" : "#5b6b64" }}>
-                {plan.tag}
+              <div>
+                <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: plan.highlighted ? "#37e39b" : "#5b6b64" }}>
+                  {plan.tag}
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 18 }}>
+                  <span style={{ font: "700 40px/1 var(--font-geist-sans)", letterSpacing: "-.04em" }}>{plan.price}</span>
+                  {plan.period && <span className="ax-mono" style={{ font: `400 13px/1 ${mono}`, color: "#5b6b64" }}>{plan.period}</span>}
+                </div>
+                <p style={{ margin: "12px 0 0", minHeight: 40, font: "400 13px/1.55 var(--font-geist-sans)", color: "#8b9a93" }}>{plan.description}</p>
+                <div style={{ height: 1, background: plan.highlighted ? "rgba(140,255,190,.14)" : "var(--ax-line)", margin: "22px 0" }} />
+                <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 11, font: "400 13px/1.4 var(--font-geist-sans)", color: plan.highlighted ? "#c3cec8" : "#8b9a93" }}>
+                  {plan.features.map((f) => (
+                    <li key={f} style={{ display: "flex", gap: 9 }}>
+                      <Check style={{ width: 15, height: 15, color: "#37e39b", flex: "none" }} />
+                      {f}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 18 }}>
-                <span style={{ font: "700 40px/1 var(--font-geist-sans)", letterSpacing: "-.04em" }}>{plan.price}</span>
-                {plan.period && <span className="ax-mono" style={{ font: `400 13px/1 ${mono}`, color: "#5b6b64" }}>{plan.period}</span>}
-              </div>
-              <p style={{ margin: "12px 0 0", font: "400 13px/1.55 var(--font-geist-sans)", color: "#8b9a93" }}>{plan.description}</p>
-              <div style={{ height: 1, background: plan.highlighted ? "rgba(140,255,190,.14)" : "var(--ax-line)", margin: "22px 0" }} />
-              <ul style={{ margin: 0, padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 11, font: "400 13px/1.4 var(--font-geist-sans)", color: plan.highlighted ? "#c3cec8" : "#8b9a93" }}>
-                {plan.features.map((f) => (
-                  <li key={f} style={{ display: "flex", gap: 9 }}>
-                    <Check style={{ width: 15, height: 15, color: "#37e39b", flex: "none" }} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
               <button
                 onClick={() => handlePlanClick(plan.name)}
                 style={
                   plan.highlighted
-                    ? { width: "100%", marginTop: 26, border: "none", borderRadius: 10, background: "#37e39b", color: "#04150d", font: "700 13px/1 var(--font-geist-sans)", padding: 14, cursor: "pointer" }
-                    : { width: "100%", marginTop: 26, border: "1px solid rgba(140,255,190,.16)", borderRadius: 10, background: "#0f1312", color: "#e8edea", font: "600 13px/1 var(--font-geist-sans)", padding: 13, cursor: "pointer" }
+                    ? { width: "100%", marginTop: "auto", paddingTop: 14, paddingBottom: 14, border: "none", borderRadius: 10, background: "#37e39b", color: "#04150d", font: "700 13px/1 var(--font-geist-sans)", cursor: "pointer" }
+                    : { width: "100%", marginTop: "auto", paddingTop: 13, paddingBottom: 13, border: "1px solid rgba(140,255,190,.16)", borderRadius: 10, background: "#0f1312", color: "#e8edea", font: "600 13px/1 var(--font-geist-sans)", cursor: "pointer" }
                 }
               >
                 {plan.cta}
