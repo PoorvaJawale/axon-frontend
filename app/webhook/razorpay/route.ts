@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { setUserPlan } from "@/lib/axon";
+import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
 
 const UPGRADE_EVENTS = [
   "subscription.activated",
@@ -58,9 +59,9 @@ export async function POST(req: NextRequest) {
 
   try {
     if (UPGRADE_EVENTS.includes(type)) {
-      await setUserPlan(clerkUserId, "pro", 50000);
+      await setUserPlan(clerkUserId, "pro", PRO_VALIDATION_LIMIT);
     } else if (DOWNGRADE_EVENTS.includes(type)) {
-      await setUserPlan(clerkUserId, "free", 1000);
+      await setUserPlan(clerkUserId, "free", FREE_VALIDATION_LIMIT);
     }
   } catch (err) {
     console.error(`Razorpay webhook ${type} handling failed:`, err);

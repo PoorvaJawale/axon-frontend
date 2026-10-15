@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import crypto from "crypto";
 import { setUserPlan } from "@/lib/axon";
+import { PRO_VALIDATION_LIMIT } from "@/lib/plans";
 
 /**
  * Called by the browser right after Razorpay Checkout succeeds. Verifies the
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await setUserPlan(userId, "pro", 50000);
+    await setUserPlan(userId, "pro", PRO_VALIDATION_LIMIT);
     // Remember the subscription so we can show real invoice history later.
     const client = await clerkClient();
     await client.users.updateUserMetadata(userId, {

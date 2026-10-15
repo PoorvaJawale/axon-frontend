@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef } from "react";
 import useSWR from "swr";
+import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
 import { ChevronLeft, ChevronRight, KeyRound, Plus, Shield, Trash2 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { dashboardFetcher, usagePercent } from "@/lib/dashboard";
@@ -12,7 +13,7 @@ const formatDate = (iso: string | null) => { if (!iso) return "—"; const date 
 export default function ApiKeysPage() {
   const pageSize = useCompactRows() ? 2 : 6;
   const [page, setPage] = usePageNumber(pageSize);
-  const { userApiKey, regenerateKey } = useAuth();
+  const { userApiKey, regenerateKey, userPlan } = useAuth();
   const query = useSWR("/webhook/api-keys", dashboardFetcher, { refreshInterval: 15000 });
   const usage = useSWR("/webhook/usage", dashboardFetcher, { refreshInterval: 15000 });
   const keys: ApiKeyRow[] = query.data?.keys ?? [];
@@ -24,7 +25,7 @@ export default function ApiKeysPage() {
   const [freshKey, setFreshKey] = useState<string | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<ApiKeyRow | null>(null);
   const used = usage.data?.monthly_requests ?? 0;
-  const limit = usage.data?.request_limit ?? 1000;
+  const limit = usage.data?.request_limit ?? (userPlan === "Pro" ? PRO_VALIDATION_LIMIT : FREE_VALIDATION_LIMIT);
   const create = async (event: React.FormEvent) => {
     event.preventDefault();
     if (lock.current || !name.trim()) return;
@@ -56,9 +57,9 @@ export default function ApiKeysPage() {
         const current = !!userApiKey && key.keyPrefix === userApiKey.slice(0, 20);
         return <tr key={key.id}><td><div className="dash-actions" style={{ flexWrap: "nowrap" }}><KeyRound size={15} className="dash-muted" /><strong className="dash-truncate" title={key.name}>{key.name}</strong>{current && <Status tone="neutral">Current</Status>}</div><div className="dash-mono dash-muted dash-small" style={{ marginTop: 6 }}>{key.keyPrefix}••••••••</div></td><td><Status tone={key.isActive ? "green" : "neutral"}>{key.isActive ? "Active" : "Revoked"}</Status></td><td className="dash-time dash-mono">{formatDate(key.createdAt)}</td><td className="dash-time dash-mono">{key.lastUsedAt ? formatDate(key.lastUsedAt) : "Never used"}</td><td className="dash-mono">{key.monthlyRequests.toLocaleString()}</td><td>{key.isActive && <button className="dash-icon-button" aria-label={`Revoke ${key.name}`} disabled={current} title={current ? "Create a new key before revoking the credential used by this session" : "Revoke key"} onClick={() => { setError(""); setRevokeTarget(key); }}><Trash2 size={15} /></button>}</td></tr>;
       })}</tbody></table></div>}
-      <div className="dash-pagination"><span>Monthly quota across all keys</span><span className="dash-mono">{usage.error ? "Usage unavailable" : usage.data ? `${used.toLocaleString()} / ${limit >= 999999999 ? "Unlimited" : limit.toLocaleString()}` : "Loading usage…"}</span></div>
+      <div className="dash-pagination"><span>{userPlan === "Free" ? "One-time allowance across all keys" : "Monthly quota across all keys"}</span><span className="dash-mono">{usage.error ? "Usage unavailable" : usage.data ? `${used.toLocaleString()} / ${limit >= 999999999 ? "Unlimited" : limit.toLocaleString()}` : "Loading usage…"}</span></div>
       {keys.length > pageSize && <div className="dash-pagination"><span>Page {Math.min(page, Math.max(1, Math.ceil(keys.length / pageSize)))} of {Math.max(1, Math.ceil(keys.length / pageSize))}</span><div className="dash-actions"><button className="dash-icon-button" aria-label="Previous keys" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}><ChevronLeft size={15} /></button><button className="dash-icon-button" aria-label="Next keys" disabled={page >= Math.ceil(keys.length / pageSize)} onClick={() => setPage(p => p + 1)}><ChevronRight size={15} /></button></div></div>}
-      {usage.data && !usage.error && <div className="dash-quota-track" role="meter" aria-label="Monthly quota used" aria-valuenow={usagePercent(used, limit)} aria-valuemin={0} aria-valuemax={100}><span style={{ transform: `scaleX(${usagePercent(used, limit) / 100})` }} /></div>}
+      {usage.data && !usage.error && <div className="dash-quota-track" role="meter" aria-label={userPlan === "Free" ? "One-time allowance used" : "Monthly quota used"} aria-valuenow={usagePercent(used, limit)} aria-valuemin={0} aria-valuemax={100}><span style={{ transform: `scaleX(${usagePercent(used, limit) / 100})` }} /></div>}
     </section>
     <details className="dash-key-help"><summary>Integration &amp; key security</summary><div className="dash-key-guide"><section><h2>Connect your agent</h2><p>Pass your secret in the Authorization header on validation requests. Keep the key on your server, outside client-side code.</p><pre className="dash-code"><span className="dash-purple">Authorization:</span> <span className="dash-green">Bearer sk-axon-YOUR_KEY</span></pre><div style={{ marginTop: 16 }}><DocsLink>Read the integration guide</DocsLink></div></section><section><h2>Keep access under control</h2><ul><li>Save a new secret immediately. It is only shown once.</li><li>Rotate by creating a replacement, updating your agent, then revoking the old key.</li><li>Revoked keys stop working immediately. Rotate any key that has been exposed.</li></ul></section></div>
     <div className="dash-security-note"><Shield size={16} /><span>Your current session key is protected from revocation. Create a replacement before rotating it.</span></div>

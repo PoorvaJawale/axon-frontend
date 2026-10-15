@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
+import { PRO_MONTHLY_PRICE_INR } from "@/lib/plans";
 
 /**
  * Creates a Razorpay subscription for the signed-in user and returns the ids
@@ -22,6 +23,29 @@ export async function POST() {
     );
   }
 
+  // Refuse an old Razorpay plan rather than charge a different advertised price.
+  const authorization = "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64");
+  try {
+    const planResponse = await fetch(`https://api.razorpay.com/v1/plans/${encodeURIComponent(planId)}`, {
+      headers: { Authorization: authorization },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10000),
+    });
+    if (!planResponse.ok) {
+      return NextResponse.json({ error: "Could not verify subscription pricing" }, { status: 502 });
+    }
+    const plan = await planResponse.json();
+    if (plan.period !== "monthly" || plan.interval !== 1 ||
+        plan.item?.currency !== "INR" || plan.item?.amount !== PRO_MONTHLY_PRICE_INR * 100) {
+      return NextResponse.json(
+        { error: "Pro checkout is being updated. Please try again later.", code: "PLAN_MISMATCH" },
+        { status: 503 }
+      );
+    }
+  } catch {
+    return NextResponse.json({ error: "Could not verify subscription pricing" }, { status: 502 });
+  }
+
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
   const email = user.primaryEmailAddress?.emailAddress ?? "";
@@ -29,8 +53,7 @@ export async function POST() {
   const res = await fetch("https://api.razorpay.com/v1/subscriptions", {
     method: "POST",
     headers: {
-      Authorization:
-        "Basic " + Buffer.from(`${keyId}:${keySecret}`).toString("base64"),
+      Authorization: authorization,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

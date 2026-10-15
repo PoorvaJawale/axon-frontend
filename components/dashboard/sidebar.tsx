@@ -15,6 +15,8 @@ import {
   LogOut,
 } from "lucide-react";
 
+import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
+
 const fetcher = dashboardFetcher;
 const mono = "var(--font-geist-mono)";
 const line = "1px solid rgba(140,255,190,.09)";
@@ -47,7 +49,7 @@ export function Sidebar() {
     revalidateOnFocus: true,
   });
   const monthlyRequests = usageData?.monthly_requests ?? 0;
-  const requestLimit = usageData?.request_limit ?? 1000;
+  const requestLimit = usageData?.request_limit ?? (userPlan === "Pro" ? PRO_VALIDATION_LIMIT : FREE_VALIDATION_LIMIT);
   const pct = usagePercent(monthlyRequests, requestLimit);
 
   return (
@@ -104,7 +106,7 @@ export function Sidebar() {
       <div style={{ padding: "12px 14px" }}>
         <div style={{ border: line, borderRadius: 11, background: "#0d100f", padding: 13 }}>
           <div className="ax-mono" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", font: `600 9px/1 ${mono}`, letterSpacing: ".14em", color: "#8b9a93" }}>
-            <span>QUOTA</span>
+            <span>{userPlan === "Free" ? "ONE-TIME ALLOWANCE" : "MONTHLY QUOTA"}</span>
             <span style={{ color: "#37e39b" }}>{usageError ? "Unavailable" : usageData ? `${pct.toFixed(1)}%` : "—"}</span>
           </div>
           <div style={{ marginTop: 9, font: "700 17px/1 var(--font-geist-sans)", letterSpacing: "-.02em" }}>
