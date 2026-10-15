@@ -47,6 +47,7 @@ export default function BillingPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
   const [paymentNeedsReview, setPaymentNeedsReview] = useState(false);
+  const [recoverySubscriptionId, setRecoverySubscriptionId] = useState("");
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
   
@@ -94,14 +95,51 @@ export default function BillingPage() {
       document.body.appendChild(s);
     });
 
+  const restoreSubscription = async (callback?: Record<string, string>) => {
+    setIsProcessingCheckout(true);
+    setCheckoutError("");
+    try {
+      const response = await fetch("/webhook/razorpay-verify", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(callback || { subscriptionId: recoverySubscriptionId.trim() || undefined }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || data?.success !== true) {
+        setPaymentNeedsReview(true);
+        setCheckoutError(data?.error || "Activation is still pending. Retry activation; do not make another payment.");
+        return;
+      }
+      setIsCheckoutSuccess(true);
+      setPaymentNeedsReview(false);
+      updatePlan("Pro");
+      void mutateUsage();
+      void mutateHistory();
+    } catch {
+      setPaymentNeedsReview(true);
+      setCheckoutError("Activation was interrupted. Check activation again without making another payment.");
+    } finally {
+      setIsProcessingCheckout(false);
+    }
+  };
+
   const handleConfirmPayment = async () => {
     if (isProcessingCheckout || paymentNeedsReview) return;
+    if (usageError || !usageData) {
+      setCheckoutError("Your account usage is unavailable. Restore the connection before starting checkout.");
+      return;
+    }
     setCheckoutError("");
     setIsProcessingCheckout(true);
     try {
       const res = await fetch("/webhook/razorpay-subscribe", { method: "POST" });
       if (!res.ok) {
         const failure = await res.json().catch(() => null);
+        if (failure?.code === "SUBSCRIPTION_EXISTS") {
+          setPaymentNeedsReview(true);
+          setCheckoutError(failure.error);
+          setIsProcessingCheckout(false);
+          return;
+        }
         if (failure?.code === "PLAN_MISMATCH") {
           setCheckoutError("Pro checkout is being updated to ₹799/month. Please try again later.");
           setIsProcessingCheckout(false);
@@ -122,31 +160,10 @@ export default function BillingPage() {
         description: "Axon Pro — 5,000 validations/month",
         theme: { color: "#37e39b" },
         handler: async (response: Record<string, string>) => {
+          setRecoverySubscriptionId(subscriptionId);
+          setPaymentNeedsReview(true);
           setIsCheckoutOpen(true);
-          try {
-            const verifyRes = await fetch("/webhook/razorpay-verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(response),
-            });
-            if (verifyRes.ok) {
-              setIsCheckoutSuccess(true);
-              updatePlan("Pro");
-              mutateUsage();
-              setTimeout(() => {
-                setIsCheckoutSuccess(false);
-                setIsCheckoutOpen(false);
-              }, 2000);
-            } else {
-              setPaymentNeedsReview(true);
-              setCheckoutError("Payment received but verification failed. Please contact support before attempting another payment.");
-            }
-          } catch {
-            setPaymentNeedsReview(true);
-            setCheckoutError("Payment verification was interrupted. Contact support before paying again.");
-          } finally {
-            setIsProcessingCheckout(false);
-          }
+          await restoreSubscription(response);
         },
         modal: {
           ondismiss: () => { setIsProcessingCheckout(false); setIsCheckoutOpen(true); },
@@ -216,7 +233,7 @@ export default function BillingPage() {
 
   return (
     <div className="dash-page dash-fit-page dash-billing">
-      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{userPlan} plan</Status></PageHeader>
+      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{userPlan} plan</Status><button className="dash-button" onClick={() => { setIsCheckoutSuccess(false); setPaymentNeedsReview(true); setCheckoutError(""); setIsCheckoutOpen(true); }}>Restore paid subscription</button></PageHeader>
       <nav className="dash-segments dash-billing-tabs" aria-label="Billing views">{[["usage", "Usage"], ["plans", "Plans"], ["history", "History"], ["enterprise", "Enterprise"]].map(([value, label]) => <button key={value} aria-pressed={billingView === value} onClick={() => setBillingView(value)}>{label}</button>)}</nav>
       <div className="dash-billing-view" tabIndex={0} role="region" aria-label={billingView === "usage" ? "Current usage" : billingView === "plans" ? "Subscription plans" : billingView === "history" ? "Payment history" : "Enterprise inquiry"}>
       {billingView === "usage" && <div className="dash-billing-overview">
@@ -428,7 +445,7 @@ export default function BillingPage() {
 
       )}
       </div>
-      {isCheckoutOpen && <DashboardDialog title="Upgrade to Axon Pro" busy={isProcessingCheckout} onClose={() => setIsCheckoutOpen(false)}>{isCheckoutSuccess ? <DataState title="You're on Pro" description="Your payment was verified and your plan has been updated." /> : <><p>5,000 validations per month, semantic judge validation, and longer log retention.</p><dl className="dash-definition"><div><dt>Plan</dt><dd>Axon Pro</dd></div><div><dt>Billed monthly</dt><dd>₹799</dd></div></dl><p style={{ marginTop: 20 }}>Renews monthly. Review the final amount in Razorpay before confirming payment.</p>{checkoutError && <div className="dash-field-error" role="alert">{checkoutError}</div>}<div className="dash-actions"><button className="dash-button dash-button-primary" disabled={isProcessingCheckout || paymentNeedsReview} onClick={handleConfirmPayment}>{isProcessingCheckout ? "Opening secure checkout…" : "Continue to payment"}</button></div></>}</DashboardDialog>}
+      {isCheckoutOpen && <DashboardDialog title={isCheckoutSuccess ? "Subscription restored" : paymentNeedsReview ? "Activate your subscription" : "Upgrade to Axon Pro"} busy={isProcessingCheckout} onClose={() => setIsCheckoutOpen(false)}>{isCheckoutSuccess ? <DataState title="You're on Pro" description="Your payment was verified and your plan has been updated." /> : <><p>{paymentNeedsReview ? "Check an existing payment and finish activating Pro. This does not charge you again." : "5,000 validations per month, semantic judge validation, and longer log retention."}</p><dl className="dash-definition"><div><dt>Plan</dt><dd>Axon Pro</dd></div><div><dt>Billed monthly</dt><dd>₹799</dd></div></dl><p style={{ marginTop: 20 }}>{paymentNeedsReview ? "We will verify the subscription directly with Razorpay before updating your account." : "Renews monthly. Review the final amount in Razorpay before confirming payment."}</p>{paymentNeedsReview && <><label htmlFor="restore-subscription">Subscription ID (optional if already saved)</label><input className="dash-input" id="restore-subscription" value={recoverySubscriptionId} onChange={event => setRecoverySubscriptionId(event.target.value)} placeholder="sub_…" autoComplete="off" /><p>For an earlier payment, use its subscription ID from Razorpay.</p></>}{checkoutError && <div className="dash-field-error" role="alert">{checkoutError}</div>}<div className="dash-actions"><button className="dash-button dash-button-primary" disabled={isProcessingCheckout} onClick={() => paymentNeedsReview ? void restoreSubscription() : void handleConfirmPayment()}>{isProcessingCheckout ? "Please wait…" : paymentNeedsReview ? "Check activation — no payment" : "Continue to payment"}</button></div></>}</DashboardDialog>}
       {isCancelOpen && <DashboardDialog title="Manage your subscription" onClose={() => setIsCancelOpen(false)}><p>Subscription cancellation isn’t connected in this dashboard yet. Contact support to request cancellation. Your current plan and billing have not changed.</p><div className="dash-actions"><button className="dash-button" onClick={() => setIsCancelOpen(false)}>Close</button><button className="dash-button dash-button-primary" onClick={() => { setIsCancelOpen(false); openSales(); }}>Contact the team</button></div></DashboardDialog>}
     </div>
   );

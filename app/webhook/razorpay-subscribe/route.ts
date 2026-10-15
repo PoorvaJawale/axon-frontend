@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth, clerkClient } from "@clerk/nextjs/server";
 import { PRO_MONTHLY_PRICE_INR } from "@/lib/plans";
+import { fetchSubscription, requireOwnedSubscription } from "@/lib/razorpay";
 
 /**
  * Creates a Razorpay subscription for the signed-in user and returns the ids
@@ -49,6 +50,22 @@ export async function POST() {
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
   const email = user.primaryEmailAddress?.emailAddress ?? "";
+  const existingId = user.privateMetadata.razorpayPendingSubscriptionId || user.privateMetadata.razorpaySubscriptionId;
+  if (typeof existingId === "string") {
+    try {
+      const existing = await fetchSubscription(existingId);
+      requireOwnedSubscription(existing, userId);
+      if (existing.status === "active" || (existing.paid_count > 0 &&
+          (!(["cancelled", "completed", "expired"].includes(existing.status)) || (existing.current_end || 0) > Math.floor(Date.now()/1000)))) {
+        return NextResponse.json({ code: "SUBSCRIPTION_EXISTS", error: "An existing payment needs activation. Restore your subscription without paying again." }, { status: 409 });
+      }
+      if (existing.plan_id === planId && ["created", "authenticated"].includes(existing.status)) {
+        return NextResponse.json({ subscriptionId: existing.id, keyId });
+      }
+    } catch {
+      return NextResponse.json({ code: "SUBSCRIPTION_EXISTS", error: "An existing subscription could not be checked. Restore it before starting another payment." }, { status: 503 });
+    }
+  }
 
   const res = await fetch("https://api.razorpay.com/v1/subscriptions", {
     method: "POST",
@@ -74,5 +91,6 @@ export async function POST() {
   }
 
   const subscription = await res.json();
+  await client.users.updateUserMetadata(userId, { privateMetadata: { razorpayPendingSubscriptionId: subscription.id } });
   return NextResponse.json({ subscriptionId: subscription.id, keyId });
 }

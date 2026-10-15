@@ -1,7 +1,7 @@
 import { auth, clerkClient } from "@clerk/nextjs/server";
 
 export const AXON_API_URL =
-  process.env.AXON_API_URL || "https://axon-n8n-production-1512.up.railway.app";
+  (process.env.AXON_API_URL || "https://n8n-production-a160e.up.railway.app").replace(/\/$/, "");
 
 /**
  * Resolve the signed-in Clerk user and their Axon API key
@@ -27,13 +27,9 @@ export async function getAxonContext() {
 export async function setUserPlan(
   userId: string,
   plan: "free" | "pro" | "enterprise",
-  requestLimit: number
+  requestLimit: number,
+  billing: { period_start?: number; period_end?: number; occurred_at: number }
 ) {
-  const client = await clerkClient();
-  await client.users.updateUserMetadata(userId, {
-    privateMetadata: { axonPlan: plan },
-  });
-
   const secret = process.env.AXON_SIGNUP_SECRET;
   if (!secret) throw new Error("AXON_SIGNUP_SECRET not configured");
 
@@ -43,12 +39,20 @@ export async function setUserPlan(
       "Content-Type": "application/json",
       "x-axon-signup-secret": secret,
     },
-    body: JSON.stringify({ user_id: userId, plan, request_limit: requestLimit }),
+    body: JSON.stringify({ user_id: userId, plan, request_limit: requestLimit, ...billing }),
     cache: "no-store",
+    signal: AbortSignal.timeout(15000),
   });
   if (!res.ok) {
     throw new Error(`billing-update failed with status ${res.status}`);
   }
+  const raw = await res.json();
+  const data = Array.isArray(raw) ? raw[0] : raw;
+  if (data?.success !== true) throw new Error("billing-update did not acknowledge activation");
+  if (data.ignored === true) return { ignored: true };
+  const client = await clerkClient();
+  await client.users.updateUserMetadata(userId, { privateMetadata: { axonPlan: plan } });
+  return { ignored: false };
 }
 
 /** GET an Axon backend endpoint with the user's API key. */

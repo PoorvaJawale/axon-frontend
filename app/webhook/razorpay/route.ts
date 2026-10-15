@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { clerkClient } from "@clerk/nextjs/server";
 import { setUserPlan } from "@/lib/axon";
-import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
+import { FREE_VALIDATION_LIMIT } from "@/lib/plans";
+import { activateSubscription, BillingSyncError, fetchSubscription, requireOwnedSubscription } from "@/lib/razorpay";
 
 const UPGRADE_EVENTS = [
   "subscription.activated",
@@ -41,7 +43,8 @@ export async function POST(req: NextRequest) {
 
   let event: {
     event?: string;
-    payload?: { subscription?: { entity?: { notes?: Record<string, string> } } };
+    created_at?: number;
+    payload?: { subscription?: { entity?: { id?: string; notes?: Record<string, string> } } };
   };
   try {
     event = JSON.parse(rawBody);
@@ -58,12 +61,34 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    if (UPGRADE_EVENTS.includes(type)) {
-      await setUserPlan(clerkUserId, "pro", PRO_VALIDATION_LIMIT);
-    } else if (DOWNGRADE_EVENTS.includes(type)) {
-      await setUserPlan(clerkUserId, "free", FREE_VALIDATION_LIMIT);
+    if (UPGRADE_EVENTS.includes(type) || DOWNGRADE_EVENTS.includes(type)) {
+      const id = event.payload?.subscription?.entity?.id;
+      if (!id) return NextResponse.json({ error: "Missing subscription ID" }, { status: 400 });
+      const subscription = await fetchSubscription(id);
+      requireOwnedSubscription(subscription, clerkUserId);
+      // Resolve delayed cancellation/charge events against current provider state.
+      if (subscription.status === "active") {
+        const result = await activateSubscription(subscription, clerkUserId, Math.floor(Date.now()/1000));
+        if (!result.ignored) {
+          const client = await clerkClient();
+          await client.users.updateUserMetadata(clerkUserId, { privateMetadata: { razorpaySubscriptionId: id } });
+        }
+      } else if (DOWNGRADE_EVENTS.includes(type) && ["cancelled", "halted", "expired", "completed"].includes(subscription.status)) {
+        // Do not downgrade a newer/different subscription owned by this user.
+        const client = await clerkClient();
+        const user = await client.users.getUser(clerkUserId);
+        if (user.privateMetadata.razorpaySubscriptionId === id) {
+          await setUserPlan(clerkUserId, "free", FREE_VALIDATION_LIMIT, { occurred_at: Math.floor(Date.now()/1000) });
+        }
+      } else if (UPGRADE_EVENTS.includes(type)) {
+        throw new Error("Paid subscription is not active yet");
+      }
     }
   } catch (err) {
+    if (err instanceof BillingSyncError && err.code === "LEGACY_PLAN") {
+      console.error("Legacy paid subscription requires migration");
+      return NextResponse.json({ received: true, migrationRequired: true });
+    }
     console.error(`Razorpay webhook ${type} handling failed:`, err);
     // 500 makes Razorpay retry later, which is what we want if our DB was down.
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
