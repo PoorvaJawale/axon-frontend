@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { useAccountUsage } from "@/lib/use-account-usage";
 
 export type PlanType = "Free" | "Pro" | "Enterprise";
 
@@ -9,6 +10,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   userApiKey: string | null;
   userPlan: PlanType;
+  isPlanReady: boolean;
   username: string;
   email: string;
   /** Full key returned once at first provisioning (null afterwards). */
@@ -35,32 +37,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userApiKey, setUserApiKey] = useState<string | null>(null);
   const [freshKey, setFreshKey] = useState<string | null>(null);
   const [userPlan, setUserPlan] = useState<PlanType>("Free");
-  const [provisioning, setProvisioning] = useState(false);
+  const provisioning = useRef<{ userId: string; request: Promise<{ apiKey?: string; keyPrefix?: string; plan?: string } | null> } | null>(null);
+  const usage = useAccountUsage(!!userApiKey);
+  const effectivePlan = toPlanType(usage.data?.plan ?? userPlan);
 
   // Once signed in, make sure this user has a real Axon API key.
   useEffect(() => {
-    if (!isSignedIn || userApiKey || provisioning) return;
-    setProvisioning(true);
-
-    fetch("/webhook/create-api-key", { method: "POST" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (!data) return;
-        if (data.apiKey) {
-          // Newly created — show the full key once so the user can save it.
-          setUserApiKey(data.apiKey);
-          setFreshKey(data.apiKey);
-        } else if (data.keyPrefix) {
-          // Existing user — only the safe prefix ever reaches the browser.
-          setUserApiKey(data.keyPrefix);
-        }
-        setUserPlan(toPlanType(data.plan));
-      })
-      .catch((err) => console.error("Key provisioning failed:", err))
-      .finally(() => setProvisioning(false));
-  }, [isSignedIn, userApiKey, provisioning]);
+    if (!isSignedIn || !user?.id || userApiKey) return;
+    if (provisioning.current?.userId !== user.id) {
+      provisioning.current = {
+        userId: user.id,
+        request: fetch("/webhook/create-api-key", { method: "POST" }).then(res => {
+          if (!res.ok) throw new Error(`Key provisioning failed (${res.status})`);
+          return res.json();
+        }),
+      };
+    }
+    let active = true;
+    provisioning.current.request.then(data => {
+      if (!active || !data) return;
+      if (data.apiKey) {
+        setUserApiKey(data.apiKey);
+        setFreshKey(data.apiKey);
+      } else if (data.keyPrefix) {
+        setUserApiKey(data.keyPrefix);
+      }
+      setUserPlan(toPlanType(data.plan));
+    }).catch(error => { if (active) console.error("Key provisioning failed:", error); });
+    return () => { active = false; };
+  }, [isSignedIn, user?.id, userApiKey]);
 
   const logout = () => {
+    provisioning.current = null;
     setUserApiKey(null);
     setFreshKey(null);
     signOut({ redirectUrl: "/" });
@@ -68,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const updatePlan = (plan: PlanType) => {
     setUserPlan(plan);
+    void usage.mutate(current => current ? { ...current, plan: plan.toLowerCase() as "free" | "pro" | "enterprise" } : current, { revalidate: true });
   };
 
   const regenerateKey = (newKey: string) => {
@@ -90,7 +99,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         isAuthenticated: !!isSignedIn,
         userApiKey,
-        userPlan,
+        userPlan: effectivePlan,
+        isPlanReady: !!usage.data,
         username,
         email: user?.primaryEmailAddress?.emailAddress || "",
         freshKey,

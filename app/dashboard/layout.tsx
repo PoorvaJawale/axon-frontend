@@ -22,7 +22,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, userPlan, logout } = useAuth();
+  const { isAuthenticated, userPlan, logout, isPlanReady } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -45,7 +45,7 @@ export default function DashboardLayout({
     <div className="dash-shell">
       <Sidebar />
       <div className="dash-mobile-header">
-        <div className="dash-mobile-brand"><Link href="/">Axon<span className="dash-green">.</span></Link><div className="dash-actions"><span className="dash-muted dash-small">{userPlan} plan</span><button className="dash-icon-button" aria-label="Sign out" onClick={logout}><LogOut size={16} /></button></div></div>
+        <div className="dash-mobile-brand"><Link href="/">Axon<span className="dash-green">.</span></Link><div className="dash-actions"><span className="dash-muted dash-small">{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</span><button className="dash-icon-button" aria-label="Sign out" onClick={logout}><LogOut size={16} /></button></div></div>
         <nav className="dash-mobile-nav" aria-label="Dashboard navigation">
           {[["/dashboard", "Overview"], ["/dashboard/logs", "Logs"], ["/dashboard/alerts", "Alerts"], ["/dashboard/api-keys", "API keys"], ["/dashboard/billing", "Billing"], ["/dashboard/docs", "Docs"]].map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined}>{label}</Link>)}
         </nav>

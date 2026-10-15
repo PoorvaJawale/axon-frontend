@@ -19,6 +19,7 @@ function fixture(options = {}) {
   const cache = {};
   const mockFetch = async (url,init={}) => {
     calls.push({type:'fetch',url,body:init.body&&JSON.parse(init.body),method:init.method||'GET'});
+    if(url.endsWith('/webhook/usage')) { const data = 'usageResponse' in options ? options.usageResponse : {plan:'pro',request_limit:5000,monthly_requests:0,remaining:5000}; return {ok:true,status:200,text:async()=>JSON.stringify(data)}; }
     if(url.endsWith('/cancel')) return {ok:!options.cancelFailure,json:async()=>subscription};
     if(url.includes('/v1/subscriptions/')) return {ok:true,json:async()=>subscription};
     if(url.endsWith('/webhook/billing-update')) return {ok:!options.backendFailure,status:options.backendFailure?401:200,
@@ -152,3 +153,12 @@ test('scheduled cancellation remains visible after a page reload',async()=>{
   const result=await f.load('app/webhook/subscription/route.ts').GET({url:'https://axon.example/webhook/subscription'});
   assert.equal(result.body.subscription.cancellationScheduled,true);assert.equal(result.body.subscription.canCancel,false);
 });
+
+test('usage exposes the authoritative Pro plan',async()=>{
+  const f=fixture({metadata:{axonApiKey:'test_key'}});const result=await f.load('app/webhook/usage/route.ts').GET();assert.equal(result.body.plan,'pro');assert.equal(result.body.request_limit,5000);
+});
+for(const data of [[],null,{request_limit:5000},{plan:'unknown',request_limit:5000}]) {
+  test('missing or invalid backend plan never becomes a fake Free plan: '+JSON.stringify(data),async()=>{
+    const f=fixture({metadata:{axonApiKey:'test_key'},usageResponse:data});const result=await f.load('app/webhook/usage/route.ts').GET();assert.equal(result.status,502);assert.equal(result.body.plan,undefined);
+  });
+}

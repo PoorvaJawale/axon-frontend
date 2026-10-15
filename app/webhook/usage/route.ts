@@ -13,11 +13,14 @@ export async function GET() {
   }
 
   const usage = Array.isArray(data) ? data[0] : data;
+  if (!usage || !["free", "pro", "enterprise"].includes(usage.plan)) {
+    return NextResponse.json({ error: "Account plan is unavailable" }, { status: 502 });
+  }
   return NextResponse.json({
     monthly_requests: usage?.monthly_requests ?? 0,
     request_limit: usage?.request_limit ?? 0,
     remaining: usage?.remaining ?? 0,
-    plan: usage?.plan ?? "free",
+    plan: usage.plan,
     expires_at: usage?.expires_at ?? null,
   });
 }

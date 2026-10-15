@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import useSWR from "swr";
 import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
+import { useAccountUsage } from "@/lib/use-account-usage";
 import { ChevronLeft, ChevronRight, KeyRound, Plus, Shield, Trash2 } from "lucide-react";
 import { useAuth } from "@/app/context/AuthContext";
 import { dashboardFetcher, usagePercent } from "@/lib/dashboard";
@@ -15,7 +16,7 @@ export default function ApiKeysPage() {
   const [page, setPage] = usePageNumber(pageSize);
   const { userApiKey, regenerateKey, userPlan } = useAuth();
   const query = useSWR("/webhook/api-keys", dashboardFetcher, { refreshInterval: 15000 });
-  const usage = useSWR("/webhook/usage", dashboardFetcher, { refreshInterval: 15000 });
+  const usage = useAccountUsage(!!userApiKey);
   const keys: ApiKeyRow[] = query.data?.keys ?? [];
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");

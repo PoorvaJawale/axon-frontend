@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import useSWR from "swr";
 import { useAuth } from "@/app/context/AuthContext";
-import { dashboardFetcher, usagePercent } from "@/lib/dashboard";
+import { useAccountUsage } from "@/lib/use-account-usage";
+import { usagePercent } from "@/lib/dashboard";
 import {
   LayoutDashboard,
   ScrollText,
@@ -17,7 +17,7 @@ import {
 
 import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
 
-const fetcher = dashboardFetcher;
+
 const mono = "var(--font-geist-mono)";
 const line = "1px solid rgba(140,255,190,.09)";
 
@@ -42,12 +42,9 @@ const sections = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { username, email, userPlan, logout } = useAuth();
+  const { username, email, userPlan, logout, userApiKey, isPlanReady } = useAuth();
 
-  const { data: usageData, error: usageError } = useSWR(`/webhook/usage`, fetcher, {
-    refreshInterval: 10000,
-    revalidateOnFocus: true,
-  });
+  const { data: usageData, error: usageError } = useAccountUsage(!!userApiKey);
   const monthlyRequests = usageData?.monthly_requests ?? 0;
   const requestLimit = usageData?.request_limit ?? (userPlan === "Pro" ? PRO_VALIDATION_LIMIT : FREE_VALIDATION_LIMIT);
   const pct = usagePercent(monthlyRequests, requestLimit);
@@ -62,7 +59,7 @@ export function Sidebar() {
         <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(145deg,#37e39b,#159a63)", display: "flex", alignItems: "center", justifyContent: "center", color: "#04150d", font: "800 12px/1 var(--font-geist-sans)" }}>A</div>
         <span style={{ font: "800 15px/1 var(--font-geist-sans)", letterSpacing: "-.03em" }}>Axon</span>
         <span className="ax-mono" style={{ marginLeft: "auto", font: `600 9px/1 ${mono}`, letterSpacing: ".12em", color: "#37e39b", border: "1px solid rgba(55,227,155,.28)", borderRadius: 4, padding: "4px 5px", textTransform: "uppercase" }}>
-          {userPlan}
+          {isPlanReady ? userPlan : "…"}
         </span>
       </div>
 

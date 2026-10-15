@@ -7,6 +7,7 @@ import { Building, CheckCircle, Download } from "lucide-react";
 import { dashboardFetcher, usagePercent } from "@/lib/dashboard";
 import { DashboardDialog, DataState, PageHeader, Status } from "@/components/dashboard/ui";
 import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
+import { useAccountUsage } from "@/lib/use-account-usage";
 const fetcher = dashboardFetcher;
 type RazorpayOptions = {
   key: string;
@@ -21,14 +22,10 @@ type RazorpayWindow = Window & { Razorpay?: new (options: RazorpayOptions) => { 
 
 export default function BillingPage() {
   const [billingView, setBillingView] = useState("usage");
-  const { userPlan, updatePlan } = useAuth();
+  const { userPlan, updatePlan, userApiKey, isPlanReady } = useAuth();
 
   // Live usage from the Axon backend — session cookie authenticates the proxy
-  const { data: usageData, error: usageError, isLoading: usageLoading, mutate: mutateUsage } = useSWR(
-    "/webhook/usage",
-    fetcher,
-    { refreshInterval: 10000, revalidateOnFocus: true }
-  );
+  const { data: usageData, error: usageError, isLoading: usageLoading, mutate: mutateUsage } = useAccountUsage(!!userApiKey);
 
   const monthlyRequests = usageData?.monthly_requests ?? 0;
   const requestLimit = usageData?.request_limit ?? (userPlan === "Pro" ? PRO_VALIDATION_LIMIT : FREE_VALIDATION_LIMIT);
@@ -262,7 +259,7 @@ export default function BillingPage() {
 
   return (
     <div className="dash-page dash-fit-page dash-billing">
-      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{userPlan} plan</Status><button className="dash-button" onClick={() => { setIsCheckoutSuccess(false); setPaymentNeedsReview(true); setCheckoutError(""); setIsCheckoutOpen(true); }}>Restore paid subscription</button>{userPlan === "Free" && <button className="dash-button" onClick={openCancellation}>Manage subscription</button>}</PageHeader>
+      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</Status><button className="dash-button" onClick={() => { setIsCheckoutSuccess(false); setPaymentNeedsReview(true); setCheckoutError(""); setIsCheckoutOpen(true); }}>Restore paid subscription</button>{userPlan === "Free" && <button className="dash-button" onClick={openCancellation}>Manage subscription</button>}</PageHeader>
       <nav className="dash-segments dash-billing-tabs" aria-label="Billing views">{[["usage", "Usage"], ["plans", "Plans"], ["history", "History"], ["enterprise", "Enterprise"]].map(([value, label]) => <button key={value} aria-pressed={billingView === value} onClick={() => setBillingView(value)}>{label}</button>)}</nav>
       <div className="dash-billing-view" tabIndex={0} role="region" aria-label={billingView === "usage" ? "Current usage" : billingView === "plans" ? "Subscription plans" : billingView === "history" ? "Payment history" : "Enterprise inquiry"}>
       {billingView === "usage" && <div className="dash-billing-overview">
@@ -270,11 +267,11 @@ export default function BillingPage() {
         <div className="dash-billing-meter"><div className="dash-section-heading"><h2>{userPlan === "Free" ? "Free validation allowance" : "Monthly validations"}</h2><Status tone={usagePercentage >= 90 ? "amber" : "green"}>{usageError ? "Unavailable" : usageLoading ? "Loading" : usagePercentage >= 90 ? "Near quota" : "Within quota"}</Status></div>
           {usageError ? <DataState error={usageError} retry={() => void mutateUsage()} title="" /> : <><div className="dash-usage-value"><strong className="dash-mono">{usageLoading ? "—" : monthlyRequests.toLocaleString()}</strong><span>of {requestLimit >= 999999999 ? "unlimited" : requestLimit.toLocaleString()} validations</span></div><div className="dash-quota-track" role="meter" aria-label={userPlan === "Free" ? "Free validations used" : "Monthly validations used"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={usagePercentage}><span style={{ transform: `scaleX(${usagePercentage / 100})`, background: usagePercentage >= 90 ? "var(--ax-amber)" : "var(--primary)" }} /></div><div className="dash-section-heading dash-small dash-muted" style={{ marginTop: 14 }}><span>{usageLoading ? "Loading usage…" : `${usagePercentage.toFixed(1)}% of ${userPlan === "Free" ? "one-time allowance" : "monthly quota"}`}</span><span>Shared across all keys</span></div></>}
         </div>
-        <div className="dash-billing-current"><h2>{userPlan} plan</h2><p>{userPlan === "Free" ? "100 one-time validations to try Axon. No monthly refill." : userPlan === "Pro" ? "5,000 monthly validations with semantic judge validation." : "Custom capacity and support for your organization."}</p><strong>{userPlan === "Free" ? "₹0" : userPlan === "Pro" ? "₹799 / month" : "Custom pricing"}</strong><div className="dash-actions">{userPlan === "Free" ? <button className="dash-button dash-button-primary" onClick={handleUpgradeClick}>Upgrade to Pro</button> : <><button className="dash-button" onClick={openSales}>Contact sales</button>{userPlan === "Pro" && <button className="dash-button dash-button-quiet" onClick={openCancellation}>Manage subscription</button>}</>}</div></div>
+        <div className="dash-billing-current"><h2>{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</h2><p>{!isPlanReady ? "Loading your account’s current plan." : userPlan === "Free" ? "100 one-time validations to try Axon. No monthly refill." : userPlan === "Pro" ? "5,000 monthly validations with semantic judge validation." : "Custom capacity and support for your organization."}</p><strong>{!isPlanReady ? "—" : userPlan === "Free" ? "₹0" : userPlan === "Pro" ? "₹799 / month" : "Custom pricing"}</strong><div className="dash-actions">{!isPlanReady ? <Status tone="neutral">{usageError ? "Plan unavailable" : "Loading plan…"}</Status> : userPlan === "Free" ? <button className="dash-button dash-button-primary" onClick={handleUpgradeClick}>Upgrade to Pro</button> : <><button className="dash-button" onClick={openSales}>Contact sales</button>{userPlan === "Pro" && <button className="dash-button dash-button-quiet" onClick={openCancellation}>Manage subscription</button>}</>}</div></div>
       </section>
       </div>}
       {billingView === "plans" && <div className="dash-billing-overview">
-      {userPlan === "Free" && <section className="dash-panel dash-plan-comparison" aria-label="Compare subscription plans">
+      {isPlanReady && userPlan === "Free" && <section className="dash-panel dash-plan-comparison" aria-label="Compare subscription plans">
         <div className="dash-table-scroll"><table className="dash-table"><thead><tr><th>Included</th><th><h3>Free</h3><span className="dash-muted">₹0</span></th><th><h3>Pro</h3><span className="dash-green">₹799 / month</span></th></tr></thead><tbody>{[
           ["Validations", "100 total · one-time", "5,000 / month"],
           ["Validation", "JSON schema", "Schema + semantic judge"],
