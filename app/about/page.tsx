@@ -1,89 +1,15 @@
-"use client";
-
-import React from "react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { ArrowLeft, Target, ShieldAlert, Mail } from "lucide-react";
-
+import { PageFrame, ContactLink } from "@/components/public/page-frame";
+import { ValidationJourney } from "@/components/public/validation-journey";
+export const metadata: Metadata = { title: "About Axon", description: "The validation layer between AI agents and the systems they act on." };
 export default function AboutPage() {
-  return (
-    <div className="flex min-h-screen flex-col bg-[#000000] text-[#ffffff]">
-      <Header />
-
-      <main className="flex-1 pt-12 pb-16 px-6 relative z-10">
-        {/* Background glow */}
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="absolute left-1/2 top-1/4 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-[#37e39b]/5 blur-[100px]" />
-        </div>
-
-        <div className="mx-auto max-w-3xl space-y-12">
-          {/* Back Button */}
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-white transition-colors mb-2 cursor-pointer"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
-              About Axon
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Built by developers, for developers. Learn more about our mission.
-            </p>
-          </div>
-
-          <div className="space-y-10">
-            {/* Mission Section */}
-            <section className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
-              <div className="flex items-center gap-3 text-primary">
-                <Target className="h-5 w-5" />
-                <h2 className="text-lg font-bold text-white">Our Mission</h2>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                AI agents are being deployed into production systems faster than the safety infrastructure can keep up. Axon exists to close that gap. We build the trust layer that sits between AI agents and the real world — so developers can ship AI-powered products with confidence, knowing that hallucinations and malformed outputs are caught before they cause damage.
-              </p>
-            </section>
-
-            {/* Problem Section */}
-            <section className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
-              <div className="flex items-center gap-3 text-primary">
-                <ShieldAlert className="h-5 w-5" />
-                <h2 className="text-lg font-bold text-white">The Problem</h2>
-              </div>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                When an AI agent sends a wrong email, writes bad data to a database, or approves a fraudulent transaction — nobody finds out until after the damage is done. Current solutions are either non-existent or require teams to build fragile custom validation logic from scratch. Axon provides a universal, plug-and-play validation layer that any agent can use with two lines of code.
-              </p>
-            </section>
-
-            {/* Contact Section */}
-            <section className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
-              <div className="flex items-center gap-3 text-primary">
-                <Mail className="h-5 w-5" />
-                <h2 className="text-lg font-bold text-white">Get in Touch</h2>
-              </div>
-              <div className="space-y-3">
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Have questions, feedback, or want to learn more about integrating Axon into your enterprise systems?
-                </p>
-                <div className="pt-2">
-                  <a
-                    href="mailto:axonapiai@gmail.com"
-                    className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary hover:bg-muted px-4 py-2.5 text-xs font-semibold text-[#37e39b] hover:text-[#37e39b]/90 transition-colors"
-                  >
-                    axonapiai@gmail.com
-                  </a>
-                </div>
-              </div>
-            </section>
-          </div>
-        </div>
-      </main>
-
-      <Footer />
+  return <PageFrame active="About" title="Confidence before execution." description="We’re building the trust layer between AI agents and the real world.">
+    <div className="ap-about-grid">
+      <div className="ap-mission"><h2>AI moves fast. <br/>Trust needs a checkpoint.</h2><p>AI agents are reaching production faster than safety infrastructure can keep up. Axon exists to close that gap.</p><p>Our mission is to help developers ship with confidence by checking agent outputs before they reach an email inbox, a database, or a payment system.</p><Link className="ap-action" href="/docs">Explore the documentation <span aria-hidden="true">↗</span></Link></div>
+      <ValidationJourney />
     </div>
-  );
+    <section className="ap-editorial-section"><h2>The problem we’re solving</h2><div><p>When an agent sends the wrong email, writes bad data, or approves a fraudulent transaction, the damage can happen before anyone notices.</p><p>Teams often build fragile custom validation logic to catch those mistakes. Axon brings schema and semantic checks into a shared validation layer, so developers can focus on the products they’re building.</p></div></section>
+    <section className="ap-contact"><div><h2>Build with us.</h2><p>Questions, feedback, or an enterprise integration in mind?</p></div><ContactLink /></section>
+  </PageFrame>;
 }
