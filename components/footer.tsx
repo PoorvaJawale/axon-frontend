@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import { Lock, Server, FileCheck, EyeOff } from "lucide-react";
 
 const mono = "var(--font-geist-mono)";
@@ -49,7 +50,7 @@ export function Footer() {
         >
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-              <div style={{ width: 20, height: 20, borderRadius: 6, background: "linear-gradient(145deg,#37e39b,#159a63)", display: "flex", alignItems: "center", justifyContent: "center", color: "#04150d", font: "800 11px/1 var(--font-geist-sans)" }}>A</div>
+              <BrandMark size={32} />
               <span style={{ font: "800 15px/1 var(--font-geist-sans)", letterSpacing: "-.03em" }}>Axon</span>
             </div>
             <p style={{ margin: "14px 0 0", maxWidth: 280, font: "400 13px/1.6 var(--font-geist-sans)", color: "#5b6b64" }}>

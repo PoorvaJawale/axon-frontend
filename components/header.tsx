@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { ArrowRight } from "lucide-react";
 
@@ -66,7 +67,7 @@ export function Header() {
           alignItems: "center",
           justifyContent: "space-between",
           height: 68,
-          padding: "0 40px",
+          padding: "0 clamp(16px, 3vw, 40px)",
           borderBottom: "1px solid var(--ax-line)",
           background: "rgba(7,9,8,.86)",
           backdropFilter: "blur(14px)",
@@ -74,21 +75,7 @@ export function Header() {
       >
         <div style={{ display: "flex", alignItems: "center", gap: 44 }}>
           <Link href="/" style={{ display: "flex", alignItems: "center", gap: 9 }}>
-            <div
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 6,
-                background: "linear-gradient(145deg,#37e39b,#159a63)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#04150d",
-                font: "800 12px/1 var(--font-geist-sans)",
-              }}
-            >
-              A
-            </div>
+            <BrandMark size={36} />
             <span style={{ font: "800 17px/1 var(--font-geist-sans)", letterSpacing: "-.03em", color: "#e8edea" }}>
               Axon
             </span>

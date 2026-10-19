@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/dashboard/sidebar";
 import { LogOut } from "lucide-react";
 import { DashboardDialog, CopyButton } from "@/components/dashboard/ui";
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import { usePathname } from "next/navigation";
 import "./dashboard.css";
 
@@ -45,7 +46,7 @@ export default function DashboardLayout({
     <div className="dash-shell">
       <Sidebar />
       <div className="dash-mobile-header">
-        <div className="dash-mobile-brand"><Link href="/">Axon<span className="dash-green">.</span></Link><div className="dash-actions"><span className="dash-muted dash-small">{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</span><button className="dash-icon-button" aria-label="Sign out" onClick={logout}><LogOut size={16} /></button></div></div>
+        <div className="dash-mobile-brand"><Link href="/" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><BrandMark size={32} /><span>Axon</span></Link><div className="dash-actions"><span className="dash-muted dash-small">{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</span><button className="dash-icon-button" aria-label="Sign out" onClick={logout}><LogOut size={16} /></button></div></div>
         <nav className="dash-mobile-nav" aria-label="Dashboard navigation">
           {[["/dashboard", "Overview"], ["/dashboard/logs", "Logs"], ["/dashboard/alerts", "Alerts"], ["/dashboard/api-keys", "API keys"], ["/dashboard/billing", "Billing"], ["/dashboard/docs", "Docs"]].map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? "page" : undefined}>{label}</Link>)}
         </nav>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BrandMark } from "@/components/brand-mark";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/app/context/AuthContext";
 import { useAccountUsage } from "@/lib/use-account-usage";
@@ -56,7 +57,7 @@ export function Sidebar() {
     >
       {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: 9, height: 60, padding: "0 18px", borderBottom: line }}>
-        <div style={{ width: 22, height: 22, borderRadius: 6, background: "linear-gradient(145deg,#37e39b,#159a63)", display: "flex", alignItems: "center", justifyContent: "center", color: "#04150d", font: "800 12px/1 var(--font-geist-sans)" }}>A</div>
+        <BrandMark size={34} />
         <span style={{ font: "800 15px/1 var(--font-geist-sans)", letterSpacing: "-.03em" }}>Axon</span>
         <span className="ax-mono" style={{ marginLeft: "auto", font: `600 9px/1 ${mono}`, letterSpacing: ".12em", color: "#37e39b", border: "1px solid rgba(55,227,155,.28)", borderRadius: 4, padding: "4px 5px", textTransform: "uppercase" }}>
           {isPlanReady ? userPlan : "…"}
