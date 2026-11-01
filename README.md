@@ -31,6 +31,8 @@ Private recovery, staging-secret and CLI-login folders on D: are restricted to t
 
 Follow [staging instructions](backend/staging/README.md) for isolated Docker and separate Clerk/Razorpay test configuration. A Production-environment Vercel candidate uses real production settings even before domain promotion; it is not a sandbox.
 
+`node scripts/staging-session-isolation.cjs` exercises real development Clerk sessions against the local frontend only, creates two temporary synthetic identities and cleans them up. `staging-load-check.cjs` runs a provider-free local burst using canned model responses. These operator checks require the prepared staging services and private test credentials; they do not run against production as part of ordinary unit tests.
+
 ## Deployment and operations
 
 Only the three top-level hardened workflow exports are replacements; `reference/` exports are historical evidence. Original owner-supplied exports remain untouched. Apply reviewed migrations/grants after a verified backup/restore rehearsal, configure restricted logins/TLS and server-only settings, then coordinate workflow/frontend cutover. Keep image digests pinned and Code environment access blocked.
