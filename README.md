@@ -27,6 +27,8 @@ npm run build
 
 Copy `.env.example` into an ignored environment file and use dedicated development credentials. Never commit credentials, `.cache`, `.clerk`, backup keys or plaintext production exports. Production database connections require `sslmode=verify-full` and a trusted CA; do not disable certificate checks.
 
+Private recovery, staging-secret and CLI-login folders on D: are restricted to the desktop owner, SYSTEM and administrators. Run private operator tooling as that owner; do not restore broad local-user read access to make a sandbox command work. `scripts/protect-private-cache.ps1` saves prior ACL metadata and applies the reviewed folder restrictions without changing data.
+
 Follow [staging instructions](backend/staging/README.md) for isolated Docker and separate Clerk/Razorpay test configuration. A Production-environment Vercel candidate uses real production settings even before domain promotion; it is not a sandbox.
 
 ## Deployment and operations
