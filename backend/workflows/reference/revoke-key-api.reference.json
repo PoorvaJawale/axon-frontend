@@ -1,0 +1,190 @@
+{
+  "name": "Revoke Key API — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "revoke-key",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        80
+      ],
+      "id": "14a554cb-54a3-6f16-5590-0c9e6717a908",
+      "name": "Webhook",
+      "webhookId": "c4d5e6f7-0002-4000-8000-000000000012",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const secret = $env.AXON_SIGNUP_SECRET || '';\nconst headers = $json.headers || {};\nconst given = (headers['x-axon-signup-secret'] || '').toString();\nconst body = $json.body || {};\n\nconst keyId = Number(body.key_id);\n\nconst authorized =\n  secret !== '' &&\n  given === secret &&\n  typeof body.user_id === 'string' &&\n  body.user_id.length > 0 &&\n  Number.isFinite(keyId) &&\n  keyId > 0;\n\nreturn [{\n  json: {\n    authorized,\n    user_id: body.user_id,\n    key_id: keyId\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        80
+      ],
+      "id": "6c06cd12-d681-7451-f6d1-e30d6c1941d4",
+      "name": "Auth Gate",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "c4d5e6f7-0004-4000-8000-000000000014",
+              "leftValue": "={{$json.authorized}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        80
+      ],
+      "id": "34cc996d-d3ca-be41-0678-b968301784e5",
+      "name": "If Authorized",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE api_keys\nSET is_active = false,\n    updated_at = NOW()\nWHERE id = $2\nAND user_id = $1\nRETURNING id, key_prefix, name;",
+        "options": {
+          "queryReplacement": "={{ [$json.user_id, $json.key_id] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9a59426c-5b82-3dcf-d7ff-d11944e00a39",
+      "name": "Revoke Key",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": {{ !!$json.id }}, \"key_id\": {{ JSON.stringify($json.id ?? null) }}, \"key_prefix\": {{ JSON.stringify($json.key_prefix ?? null) }} }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "34252584-337f-9bf3-ec70-cd6617c1c4d3",
+      "name": "Respond Result",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"success\": false, \"message\": \"Unauthorized or invalid payload\" }",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        208
+      ],
+      "id": "1378c6a5-2bd0-9629-3d27-1b74805f6643",
+      "name": "Respond Unauthorized",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Auth Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Gate": {
+      "main": [
+        [
+          {
+            "node": "If Authorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Authorized": {
+      "main": [
+        [
+          {
+            "node": "Revoke Key",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revoke Key": {
+      "main": [
+        [
+          {
+            "node": "Respond Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

@@ -1241,3 +1241,5 @@
 .ap-health-table td { vertical-align: top; padding-top: 18px; }
 .ap-health-scope { max-width: 75ch; font-size: 14px; margin: 24px 0 0; }
 @media(max-width:680px) { .ap-health-banner { align-items: flex-start; } .ap-health-banner .ap-check-button { margin-left: 36px; } .ap-health-table .ap-check-detail { font-size: 12px; } .ap-health-state { font-size: 12px; white-space: normal; align-items: flex-start; } .ap-health-state svg { margin-top: 2px; } .ap-health-table th:first-child { width: 52%; } .ap-health-table td { padding-top: 16px; } .ap-check-latency { font-size: 11px; } }
+
+.ap-policy {max-width:75ch;} .ap-policy section {margin:0 0 36px;} .ap-policy h2 {font-size:1.35rem;line-height:1.35;margin:0 0 14px;} .ap-policy p,.ap-policy dd {color:#a3b2aa;line-height:1.75;} .ap-policy dt {font-weight:600;margin-top:16px;} .ap-policy dd {margin:6px 0 0;} .ap-policy pre {max-width:100%;overflow:auto;padding:20px;background:#0a0d0c;border:1px solid #24362c;border-radius:12px;font-size:12px;line-height:1.7;} .ap-policy code {overflow-wrap:anywhere;}

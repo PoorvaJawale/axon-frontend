@@ -40,7 +40,10 @@ export default function CareersPage() {
             {/* Intro Copy */}
             <div className="rounded-xl border border-border bg-[#0a0d0c]/30 p-6 md:p-8 space-y-4">
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Axon is an early stage product built by a small team. We are not hiring formally yet, but we are always interested in talking to exceptional people who care about AI safety and production reliability.
+                Axon is an early stage product built by a small team. We are not
+                hiring formally yet, but we are always interested in talking to
+                exceptional people who care about AI safety and production
+                reliability.
               </p>
             </div>
 
@@ -54,12 +57,13 @@ export default function CareersPage() {
                   No open positions right now
                 </h3>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  We are heads down building the product. Check back soon or reach out directly to say hello.
+                  We are heads down building the product. Check back soon or
+                  reach out directly to say hello.
                 </p>
               </div>
               <div className="pt-3">
                 <a
-                  href="mailto:axonapiai@gmail.com"
+                  href="mailto:axonapi2026@gmail.com"
                   className="inline-flex items-center gap-2 rounded-lg bg-[#37e39b] px-5 py-2.5 text-xs font-semibold text-[#000000] hover:bg-[#37e39b]/90 transition-colors"
                 >
                   <Mail className="h-3.5 w-3.5" />

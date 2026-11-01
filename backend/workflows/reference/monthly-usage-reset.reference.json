@@ -1,0 +1,64 @@
+{
+  "name": "Monthly Usage Reset — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1e581cc8-7bb0-d1c1-4388-bdb9402967d2",
+      "name": "Schedule Trigger",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE api_keys\nSET monthly_requests=0\nWHERE plan = 'pro';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "609beb19-a9fe-1afb-d49a-9c6b5478cb63",
+      "name": "Execute a SQL query",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

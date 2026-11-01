@@ -1,0 +1,242 @@
+{
+  "name": "Alerts API — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "alerts",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "11ba3f58-2e4d-6f2a-5cc4-09c119e0d950",
+      "name": "Webhook",
+      "webhookId": "1c209865-f821-4ffa-b41e-13f0388e5c18",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, timestamp, user_id, action_type, final_verdict, reason, risk_level, category\nFROM validation_logs\nWHERE user_id = $1\nAND final_verdict = 'BLOCK'\nORDER BY timestamp DESC\nLIMIT 100;",
+        "options": {
+          "queryReplacement": "={{$node[\"Execute a SQL query1\"].json[\"user_id\"]}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "a6239a7c-9f72-3035-4407-3094cf55946c",
+      "name": "Execute a SQL query",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "1c0e0fce-8715-680e-38fd-506411754e6f",
+      "name": "Respond to Webhook",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst auth = ($json.headers && $json.headers.authorization) || '';\nconst rawKey = auth.replace('Bearer ', '').trim();\n\nconst hashedKey = crypto\n  .createHash('sha256')\n  .update(rawKey)\n  .digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    hashed_key: hashedKey\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "6a55bf92-7f16-1037-540d-8dbdc5c8ca27",
+      "name": "Code in JavaScript1",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM api_keys\nWHERE hashed_api_key = $1\nAND is_active = true\nAND expires_at > NOW();",
+        "options": {
+          "queryReplacement": "={{$json.hashed_key}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        416,
+        0
+      ],
+      "id": "fb6d85b8-2c92-0372-6228-5d82a6546970",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "7d26a05d-735b-448a-9be0-482ae83baf4c",
+              "leftValue": "={{$json.id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "28797111-b805-65d9-4767-dc2ab502aa62",
+      "name": "If",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{\"status\":\"401\",\"message\":\"Invalid API Key\"}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        96
+      ],
+      "id": "14bb2d0b-2df7-7fcf-230c-3a208e9f13bc",
+      "name": "Code in JavaScript",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n \"status\":\"401\",\n \"message\":\"Invalid API Key\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1088,
+        192
+      ],
+      "id": "bfe50308-1b67-aeae-3304-0e10ba45f6f9",
+      "name": "Respond to Webhook1",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

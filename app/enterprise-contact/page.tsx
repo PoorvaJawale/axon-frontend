@@ -57,7 +57,7 @@ export default function EnterpriseContactPage() {
 
     // Format selected systems
     const selectedSystemsList = Object.entries(systems)
-      .filter(([_, checked]) => checked)
+      .filter(([, checked]) => checked)
       .map(([name]) => {
         const labels: Record<string, string> = {
           emailSending: "Email sending",
@@ -95,11 +95,15 @@ export default function EnterpriseContactPage() {
       } else {
         const errText = await response.text();
         console.error("Contact sales error response:", errText);
-        setErrorMsg("Something went wrong. Please email us directly at axonapiai2026@gmail.com");
+        setErrorMsg(
+          "Something went wrong. Please email us directly at axonapi2026@gmail.com",
+        );
       }
     } catch (err) {
       console.error("Fetch error submitting form:", err);
-      setErrorMsg("Something went wrong. Please email us directly at axonapiai2026@gmail.com");
+      setErrorMsg(
+        "Something went wrong. Please email us directly at axonapi2026@gmail.com",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -138,7 +142,8 @@ export default function EnterpriseContactPage() {
                   Thank you, {firstName}!
                 </h2>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  We have received your inquiry and will reach out to axonapiai@gmail.com within 24 hours.
+                  Your inquiry has been sent. The team will reply to the work
+                  email you provided.
                 </p>
               </div>
               <div className="pt-4">
@@ -158,7 +163,8 @@ export default function EnterpriseContactPage() {
                   Talk to Sales
                 </h1>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Tell us about your use case and we will reach out within 24 hours.
+                  Tell us about your use case and we will reach out within 24
+                  hours.
                 </p>
               </div>
 
@@ -228,7 +234,10 @@ export default function EnterpriseContactPage() {
                         htmlFor="jobTitle"
                         className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                       >
-                        Job Title <span className="text-muted-foreground/50 lowercase italic">(optional)</span>
+                        Job Title{" "}
+                        <span className="text-muted-foreground/50 lowercase italic">
+                          (optional)
+                        </span>
                       </label>
                       <input
                         id="jobTitle"
@@ -246,7 +255,8 @@ export default function EnterpriseContactPage() {
                         htmlFor="agentsCount"
                         className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                       >
-                        How many AI agents are you running? <span className="text-red-500">*</span>
+                        How many AI agents are you running?{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <select
                         id="agentsCount"
@@ -255,7 +265,9 @@ export default function EnterpriseContactPage() {
                         onChange={(e) => setAgentsCount(e.target.value)}
                         className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#37e39b]"
                       >
-                        <option value="" disabled>Select agent count...</option>
+                        <option value="" disabled>
+                          Select agent count...
+                        </option>
                         <option value="1 to 10">1 to 10</option>
                         <option value="10 to 50">10 to 50</option>
                         <option value="50 to 200">50 to 200</option>
@@ -269,7 +281,8 @@ export default function EnterpriseContactPage() {
                         htmlFor="monthlyVolume"
                         className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                       >
-                        Estimated monthly validation volume? <span className="text-red-500">*</span>
+                        Estimated monthly validation volume?{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <select
                         id="monthlyVolume"
@@ -278,10 +291,16 @@ export default function EnterpriseContactPage() {
                         onChange={(e) => setMonthlyVolume(e.target.value)}
                         className="w-full rounded-lg border border-[#1f2937] bg-[#070908] px-3.5 py-2.5 text-sm text-white placeholder-muted-foreground/40 outline-none focus:border-[#37e39b]"
                       >
-                        <option value="" disabled>Select monthly volume...</option>
+                        <option value="" disabled>
+                          Select monthly volume...
+                        </option>
                         <option value="Under 10,000">Under 10,000</option>
-                        <option value="10,000 to 100,000">10,000 to 100,000</option>
-                        <option value="100,000 to 1,000,000">100,000 to 1,000,000</option>
+                        <option value="10,000 to 100,000">
+                          10,000 to 100,000
+                        </option>
+                        <option value="100,000 to 1,000,000">
+                          100,000 to 1,000,000
+                        </option>
                         <option value="Over 1,000,000">Over 1,000,000</option>
                       </select>
                     </div>
@@ -292,7 +311,10 @@ export default function EnterpriseContactPage() {
                         htmlFor="heardFrom"
                         className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                       >
-                        How did you hear about Axon? <span className="text-muted-foreground/50 lowercase italic">(optional)</span>
+                        How did you hear about Axon?{" "}
+                        <span className="text-muted-foreground/50 lowercase italic">
+                          (optional)
+                        </span>
                       </label>
                       <select
                         id="heardFrom"
@@ -319,8 +341,14 @@ export default function EnterpriseContactPage() {
                         {[
                           { key: "emailSending", label: "Email sending" },
                           { key: "databaseWrites", label: "Database writes" },
-                          { key: "paymentProcessing", label: "Payment processing" },
-                          { key: "customerChat", label: "Customer-facing chat" },
+                          {
+                            key: "paymentProcessing",
+                            label: "Payment processing",
+                          },
+                          {
+                            key: "customerChat",
+                            label: "Customer-facing chat",
+                          },
                           { key: "internalApis", label: "Internal APIs" },
                           { key: "other", label: "Other" },
                         ].map((item) => (
@@ -330,11 +358,19 @@ export default function EnterpriseContactPage() {
                           >
                             <input
                               type="checkbox"
-                              checked={systems[item.key as keyof typeof systems]}
-                              onChange={() => handleSystemChange(item.key as keyof typeof systems)}
+                              checked={
+                                systems[item.key as keyof typeof systems]
+                              }
+                              onChange={() =>
+                                handleSystemChange(
+                                  item.key as keyof typeof systems,
+                                )
+                              }
                               className="rounded border-[#1f2937] text-[#37e39b] focus:ring-0 h-4 w-4 bg-[#070908] cursor-pointer"
                             />
-                            <span className="text-muted-foreground font-medium">{item.label}</span>
+                            <span className="text-muted-foreground font-medium">
+                              {item.label}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -358,7 +394,9 @@ export default function EnterpriseContactPage() {
                           }`}
                         />
                       </button>
-                      <span className="text-xs font-bold text-white">{onPremise ? "Yes" : "No"}</span>
+                      <span className="text-xs font-bold text-white">
+                        {onPremise ? "Yes" : "No"}
+                      </span>
                     </div>
 
                     {/* Use Case Textarea */}
@@ -367,7 +405,8 @@ export default function EnterpriseContactPage() {
                         htmlFor="useCase"
                         className="block text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5"
                       >
-                        Tell us about your use case <span className="text-red-500">*</span>
+                        Tell us about your use case{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <textarea
                         id="useCase"

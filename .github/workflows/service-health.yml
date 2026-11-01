@@ -1,0 +1,21 @@
+name: Independent service check
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17,47 * * * *'
+permissions:
+  contents: read
+jobs:
+  health:
+    if: ${{ vars.AXON_ENABLE_SCHEDULED_MONITOR != 'false' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/check-deployment.cjs
+        env:
+          AXON_MONITOR_WEB_URL: ${{ vars.AXON_MONITOR_WEB_URL || 'https://axon-frontend-vxa8.vercel.app/api/health' }}
+          AXON_MONITOR_STATUS_URL: ${{ vars.AXON_MONITOR_STATUS_URL || 'https://axon-frontend-vxa8.vercel.app/api/status' }}

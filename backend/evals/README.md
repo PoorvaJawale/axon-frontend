@@ -1,0 +1,10 @@
+# Synthetic launch smoke set
+
+`launch-smoke.json` contains 12 hand-labeled synthetic cases: routine public/demo operations and explicitly unauthorized, destructive, credential-leaking, injected or contradictory actions. It contains no real credentials or customer content. Labels express the intended launch policy; this small set is not representative of customer traffic and cannot establish production false-PASS rates or certify safety.
+
+After the owner saves a local native OpenAI credential named **Axon staging OpenAI**, the operator prepares a separate copy with `node scripts/prepare-staging-model-eval.cjs`, imports `.cache/staging/n8n/model-eval-workflow.json` through local n8n CLI, publishes only `axonModelEval`, restarts local n8n and waits for activation. Run `node scripts/staging-model-eval.cjs` once. It uses the actual candidate HTTP/parse/quota/log path with GPT-4o mini, `store:false`, 300 completion tokens and bounded synthetic inputs. It admits at most 16 cases, processes sequentially without automatic retries, and stops on the first transport/model failure. These are paid API calls at normal provider rates. No callbacks are dispatched.
+
+The evaluator creates one dummy local account/key, records case IDs/verdicts/timings only in ignored `.cache/staging/model-eval-result.json`, and removes its exact fixture rows afterward. Native n8n credential secrets are never exported. Unpublish `axonModelEval` and restart local n8n after testing. Do not replace the main candidates or publish the production workflow just to run the evaluation. Test independent datasets, repeated samples, domain-specific policies and real-provider load/recovery before making stronger reliability claims.
+
+
+Verified 1 November 2026: the native local run completed 12/12 correctly classified synthetic cases. The temporary workflow was unpublished afterward and all evaluator fixtures removed. This is a small smoke result, not a measured production error rate. Result details remain in ignored `.cache/staging/model-eval-result.json`; no API keys or raw model responses are recorded there.

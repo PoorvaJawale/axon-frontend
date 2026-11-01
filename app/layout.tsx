@@ -1,19 +1,10 @@
+import { connection } from "next/server";
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { GeistSans as geistSans } from "geist/font/sans";
+import { GeistMono as geistMono } from "geist/font/mono";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
-import { AuthProvider } from "@/app/context/AuthContext";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Axon - AI Output Validation Middleware",
@@ -21,16 +12,17 @@ export const metadata: Metadata = {
     "Stop AI agents from breaking your production systems. Axon validates AI outputs before they reach production.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await connection(); // Per-request rendering keeps CSP script nonces consistent.
   return (
     <ClerkProvider
       afterSignOutUrl="/"
       appearance={{
-        baseTheme: dark,
+        theme: dark,
         variables: { colorPrimary: "#37e39b" },
       }}
     >
@@ -38,9 +30,7 @@ export default function RootLayout({
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} bg-background`}
       >
-        <body className="min-h-screen antialiased">
-          <AuthProvider>{children}</AuthProvider>
-        </body>
+        <body className="min-h-screen antialiased">{children}</body>
       </html>
     </ClerkProvider>
   );

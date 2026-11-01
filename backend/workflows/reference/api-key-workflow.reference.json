@@ -1,0 +1,456 @@
+{
+  "name": "API Key Workflow — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-api-key",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        2240,
+        1072
+      ],
+      "id": "bd1630cd-74b1-2fe1-2017-ccc560620b67",
+      "name": "Webhook",
+      "webhookId": "5696f41e-c274-48eb-8e6b-cf437a8d022e",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst rawKey = 'sk-axon-' + crypto.randomBytes(24).toString('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    raw_api_key: rawKey\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2832,
+        1312
+      ],
+      "id": "8b2e15dc-9d3f-d298-7ab7-3e9eaf5c3eea",
+      "name": "Code in JavaScript",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"api_key\": {{ JSON.stringify($node[\"Code in JavaScript\"].json.raw_api_key) }}, \"key_prefix\": {{ JSON.stringify($node[\"Code in JavaScript\"].json.raw_api_key.slice(0,20)) }}, \"plan\": {{ JSON.stringify($node[\"Code in JavaScript2\"].json.plan) }}, \"message\": \"Save this key now. It will not be shown again.\" }",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3920,
+        1312
+      ],
+      "id": "66425f3d-e52d-26fa-a39c-e1a64185d3c3",
+      "name": "Respond to Webhook",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst rawKey = $json.raw_api_key;\n\nconst hashedKey =\n  crypto\n    .createHash('sha256')\n    .update(rawKey)\n    .digest('hex');\n\nconst webhookSecret =\n  crypto\n    .randomBytes(32)\n    .toString('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    hashed_api_key: hashedKey,\n    webhook_secret: webhookSecret\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3040,
+        1312
+      ],
+      "id": "44cf77b4-125f-c678-8ecc-374a013267dd",
+      "name": "Code in JavaScript1",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "api_keys",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "user_id": "={{$json.body.user_id}}",
+            "email": "={{$json.body.email}}",
+            "user_name": "={{$json.body.user_name}}",
+            "name": "={{$json.body.name || 'Default key'}}",
+            "key_prefix": "={{$json.raw_api_key.slice(0,20)}}",
+            "hashed_api_key": "={{$json.hashed_api_key}}",
+            "webhook_secret": "={{$json.webhook_secret}}",
+            "plan": "={{$json.plan}}",
+            "request_limit": "={{$json.request_limit}}",
+            "monthly_requests": 0,
+            "is_active": true,
+            "last_used_at": "={{$now}}",
+            "updated_at": "={{$now}}",
+            "expires_at": "={{$now.plus({days: 90})}}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "user_name",
+              "displayName": "user_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "key_prefix",
+              "displayName": "key_prefix",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "hashed_api_key",
+              "displayName": "hashed_api_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "webhook_secret",
+              "displayName": "webhook_secret",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "plan",
+              "displayName": "plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "request_limit",
+              "displayName": "request_limit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "monthly_requests",
+              "displayName": "monthly_requests",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "is_active",
+              "displayName": "is_active",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "last_used_at",
+              "displayName": "last_used_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "expires_at",
+              "displayName": "expires_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        3456,
+        1312
+      ],
+      "id": "a2687404-b2d3-2569-46ed-0d1c2d5b02a0",
+      "name": "Insert rows in a table",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const plan = ($json.body && $json.body.plan) || 'free';\n\nlet limit;\nif (plan === 'enterprise') {\n  limit = 999999999;\n} else if (plan === 'pro') {\n  limit = 5000;\n} else {\n  limit = 100;\n}\n\nreturn [{\n  json: {\n    ...$json,\n    plan,\n    request_limit: limit\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3248,
+        1312
+      ],
+      "id": "24ca522c-3ce4-23a8-3e23-3cfbb22a7277",
+      "name": "Code in JavaScript2",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const secret = $env.AXON_SIGNUP_SECRET || '';\nconst headers = $json.headers || {};\nconst given = (headers['x-axon-signup-secret'] || '').toString();\n\nreturn [{\n  json: {\n    ...$json,\n    signup_authorized: secret !== '' && given === secret\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2112,
+        1312
+      ],
+      "id": "f96913e5-3dc0-82c8-f840-70e669bd3c18",
+      "name": "Signup Gate",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4123e392-559c-4750-b490-f92961e03971",
+              "leftValue": "={{$json.signup_authorized}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2320,
+        1312
+      ],
+      "id": "713d8509-884e-0ad7-b617-b41b3a80c6aa",
+      "name": "If Signup Authorized",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"status\": \"UNAUTHORIZED\", \"message\": \"Missing or invalid signup secret\" }",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2656,
+        1440
+      ],
+      "id": "6c869260-5993-56c2-9322-52acb14cd4ab",
+      "name": "Respond Signup Unauthorized",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Signup Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Signup Gate": {
+      "main": [
+        [
+          {
+            "node": "If Signup Authorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Signup Authorized": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Signup Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

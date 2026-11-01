@@ -1,0 +1,242 @@
+{
+  "name": "API Keys API — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "api-keys",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "852f92cc-33a6-0c7f-5514-e5dbef25bca1",
+      "name": "Webhook",
+      "webhookId": "1c209865-f821-4ffa-b41e-13f0388e5c18",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, user_id, name, key_prefix, plan, request_limit, monthly_requests,\n       is_active, created_at, last_used_at, expires_at\nFROM api_keys\nWHERE user_id = $1;",
+        "options": {
+          "queryReplacement": "={{ $node[\"Execute a SQL query1\"].json.user_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1040,
+        0
+      ],
+      "id": "6c494741-bbdd-3eb2-ef99-bda1bb65bb7b",
+      "name": "Execute a SQL query",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "ea257fb5-0cc1-bc96-0e44-2e71f98bac03",
+      "name": "Respond to Webhook",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst auth = ($json.headers && $json.headers.authorization) || '';\nconst rawKey = auth.replace('Bearer ', '').trim();\n\nconst hashedKey = crypto\n  .createHash('sha256')\n  .update(rawKey)\n  .digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    hashed_key: hashedKey\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f0a55c1c-49cf-4af0-02e6-78f064ccbc70",
+      "name": "Code in JavaScript1",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM api_keys\nWHERE hashed_api_key = $1\nAND is_active = true\nAND expires_at > NOW();",
+        "options": {
+          "queryReplacement": "={{$json.hashed_key}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f36bbf8c-f3b8-09a8-5a3b-4bfa25f59f07",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "4705de19-d016-4c73-ae87-21b921747af5",
+              "leftValue": "={{$json.id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "fb5d8e5a-775b-540b-0080-fc037f68b658",
+      "name": "If",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{\"status\":\"401\",\"message\":\"Invalid API Key\"}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        96
+      ],
+      "id": "b516ced2-434d-d453-2cb9-6b396eb74989",
+      "name": "Code in JavaScript",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n \"status\":\"401\",\n \"message\":\"Invalid API Key\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1088,
+        192
+      ],
+      "id": "ca2073ac-0b74-61a3-290c-62f49a8235c0",
+      "name": "Respond to Webhook1",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

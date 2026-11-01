@@ -1,70 +1,33 @@
-import { auth, clerkClient } from "@clerk/nextjs/server";
-
-export const AXON_API_URL =
-  (process.env.AXON_API_URL || "https://n8n-production-a160e.up.railway.app").replace(/\/$/, "");
-
-/**
- * Resolve the signed-in Clerk user and their Axon API key
- * (stored server-side in Clerk privateMetadata — never sent to the browser).
- */
-export async function getAxonContext() {
-  const { userId } = await auth();
-  if (!userId) return null;
-
-  const client = await clerkClient();
-  const user = await client.users.getUser(userId);
-  const apiKey = user.privateMetadata?.axonApiKey as string | undefined;
-  if (!apiKey) return null;
-
-  return { userId, user, apiKey };
-}
-
-/**
- * Set a user's plan everywhere it lives: Clerk privateMetadata (drives the UI)
- * and the api_keys table via the n8n billing-update webhook (drives quota
- * enforcement). Guarded by the shared signup secret.
- */
+import { clerkClient } from "@clerk/nextjs/server";
+import { query } from "@/lib/db";
+/** Only verified provider handlers call this. PostgreSQL remains the entitlement source. */
 export async function setUserPlan(
   userId: string,
   plan: "free" | "pro" | "enterprise",
   requestLimit: number,
-  billing: { period_start?: number; period_end?: number; occurred_at: number }
+  billing: { period_start?: number; period_end?: number; occurred_at: number },
 ) {
-  const secret = process.env.AXON_SIGNUP_SECRET;
-  if (!secret) throw new Error("AXON_SIGNUP_SECRET not configured");
-
-  const res = await fetch(`${AXON_API_URL}/webhook/billing-update`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-axon-signup-secret": secret,
-    },
-    body: JSON.stringify({ user_id: userId, plan, request_limit: requestLimit, ...billing }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!res.ok) {
-    throw new Error(`billing-update failed with status ${res.status}`);
-  }
-  const raw = await res.json();
-  const data = Array.isArray(raw) ? raw[0] : raw;
-  if (data?.success !== true) throw new Error("billing-update did not acknowledge activation");
-  if (data.ignored === true) return { ignored: true };
+  const iso = (value: number | undefined) =>
+    value === undefined ? null : new Date(value * 1000).toISOString();
+  const rows = await query(
+    "SELECT public.axon_apply_billing($1,$2,$3::timestamptz,$4::timestamptz,$5::timestamptz,$6::bigint) AS data",
+    [
+      userId,
+      plan,
+      iso(billing.period_start),
+      iso(billing.period_end),
+      iso(billing.occurred_at),
+      plan === "enterprise" ? requestLimit : 0,
+    ],
+  );
+  const result = rows[0]?.data;
+  if (result?.success !== true)
+    throw new Error("Billing transaction was not acknowledged");
+  if (result.ignored === true) return { ignored: true };
   const client = await clerkClient();
-  await client.users.updateUserMetadata(userId, { privateMetadata: { axonPlan: plan } });
+  // Metadata is a convenience copy. Its failure must not roll back a saved entitlement.
+  await client.users
+    .updateUserMetadata(userId, { privateMetadata: { axonPlan: plan } })
+    .catch(() => console.error("Plan metadata needs reconciliation"));
   return { ignored: false };
-}
-
-/** GET an Axon backend endpoint with the user's API key. */
-export async function axonGet(path: string, apiKey: string) {
-  const res = await fetch(`${AXON_API_URL}${path}`, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    cache: "no-store",
-  });
-  const text = await res.text();
-  try {
-    return { ok: res.ok, status: res.status, data: JSON.parse(text) };
-  } catch {
-    return { ok: res.ok, status: res.status, data: null };
-  }
 }

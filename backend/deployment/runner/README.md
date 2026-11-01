@@ -1,0 +1,11 @@
+# Private external task runner
+
+The owner approved and provisioned this private service on 1 November 2026. It now matches the actual 2.45.7 main runtime, pinned by digest. See the [production report](../../../docs/operations/production-inspection-2026-11-01.md) for verification and remaining cutover gates. The notes below describe its setup; initial 2.43.6 local results were superseded by the recorded 2.45.7 verification.
+
+Deploy this directory as a private Railway service in the existing Axon project, with **no public domain or TCP proxy**. The launcher health path `/healthz` on port 5680 was verified against the matching local 2.43.6 image. Set `PORT=5680`, `N8N_RUNNERS_TASK_BROKER_URI=http://<verified-n8n-private-domain>:5679`, and a fresh `N8N_RUNNERS_AUTH_TOKEN` shared only with the main n8n service. Set max concurrency 4 and task timeout 120 seconds. Do not copy OpenAI, PostgreSQL, Clerk, Razorpay or signup credentials into this service.
+
+The matching main service needs external mode, the same token, broker listen address 0.0.0.0, blocked Code-node environment access, bounded execution concurrency and no retained execution payloads. Apply those settings only in the reviewed cutover window after the new workflows/native credentials and frontend configuration are ready. The private health workflow uses native header authentication and can remain independent of Code-node environment access.
+
+`task-runners.json` matches the tested local configuration: JavaScript allows crypto,dns,https,url only, no external modules; Python's required launcher entry has empty library allowlists. Keep image versions and digests matched. Real Railway external Code execution, denied filesystem module access and the native restricted database credential over TLS passed the temporary read-only production probe. Hardened validation/workflow cutover remains pending.
+
+A runner is metered compute within the existing workspace, not a reason to upgrade the Railway plan. The owner approved its possible resource/billing increase before provisioning. The measured local idle footprint was about 14 MiB at one instant, which is not a production cost estimate or peak-memory measurement. See [Railway pricing](https://docs.railway.com/pricing/plans).
