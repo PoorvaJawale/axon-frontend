@@ -1,26 +1,5 @@
-import { NextResponse } from "next/server";
-import { axonGet, getAxonContext } from "@/lib/axon";
-
-export async function GET() {
-  const ctx = await getAxonContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { ok, data } = await axonGet("/webhook/usage", ctx.apiKey);
-  if (!ok || !data) {
-    return NextResponse.json({ error: "Usage unavailable" }, { status: 502 });
-  }
-
-  const usage = Array.isArray(data) ? data[0] : data;
-  if (!usage || !["free", "pro", "enterprise"].includes(usage.plan)) {
-    return NextResponse.json({ error: "Account plan is unavailable" }, { status: 502 });
-  }
-  return NextResponse.json({
-    monthly_requests: usage?.monthly_requests ?? 0,
-    request_limit: usage?.request_limit ?? 0,
-    remaining: usage?.remaining ?? 0,
-    plan: usage.plan,
-    expires_at: usage?.expires_at ?? null,
-  });
+import { accountRoute } from "@/lib/account";
+import { accountUsage } from "@/lib/account-data";
+export async function GET(request: Request) {
+  return accountRoute(request, accountUsage);
 }

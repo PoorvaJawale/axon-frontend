@@ -1,11 +1,17 @@
 "use client";
 
+import { PrivacySettings } from "@/components/dashboard/account-settings";
 import React, { useState } from "react";
 import useSWR from "swr";
 import { useAuth } from "@/app/context/AuthContext";
 import { Building, CheckCircle, Download } from "lucide-react";
 import { dashboardFetcher, usagePercent } from "@/lib/dashboard";
-import { DashboardDialog, DataState, PageHeader, Status } from "@/components/dashboard/ui";
+import {
+  DashboardDialog,
+  DataState,
+  PageHeader,
+  Status,
+} from "@/components/dashboard/ui";
 import { FREE_VALIDATION_LIMIT, PRO_VALIDATION_LIMIT } from "@/lib/plans";
 import { useAccountUsage } from "@/lib/use-account-usage";
 const fetcher = dashboardFetcher;
@@ -18,27 +24,42 @@ type RazorpayOptions = {
   handler: (response: Record<string, string>) => Promise<void>;
   modal: { ondismiss: () => void };
 };
-type RazorpayWindow = Window & { Razorpay?: new (options: RazorpayOptions) => { open: () => void } };
+type RazorpayWindow = Window & {
+  Razorpay?: new (options: RazorpayOptions) => { open: () => void };
+};
 
 export default function BillingPage() {
   const [billingView, setBillingView] = useState("usage");
   const { userPlan, updatePlan, userApiKey, isPlanReady } = useAuth();
 
   // Live usage from the Axon backend — session cookie authenticates the proxy
-  const { data: usageData, error: usageError, isLoading: usageLoading, mutate: mutateUsage } = useAccountUsage(!!userApiKey);
+  const {
+    data: usageData,
+    error: usageError,
+    isLoading: usageLoading,
+    mutate: mutateUsage,
+  } = useAccountUsage(!!userApiKey);
 
   const monthlyRequests = usageData?.monthly_requests ?? 0;
-  const requestLimit = usageData?.request_limit ?? (userPlan === "Pro" ? PRO_VALIDATION_LIMIT : FREE_VALIDATION_LIMIT);
+  const requestLimit =
+    usageData?.request_limit ??
+    (userPlan === "Pro" ? PRO_VALIDATION_LIMIT : FREE_VALIDATION_LIMIT);
   const usagePercentage = usagePercent(monthlyRequests, requestLimit);
 
   // Real payment history from Razorpay (empty until the user has paid invoices)
-  const { data: historyData, error: historyError, isLoading: historyLoading, mutate: mutateHistory } = useSWR(
-    "/webhook/billing-history",
-    fetcher,
-    { revalidateOnFocus: true }
-  );
-  const invoices: { id: string; date: string; amount: string; status: string; url: string | null }[] =
-    historyData?.invoices ?? [];
+  const {
+    data: historyData,
+    error: historyError,
+    isLoading: historyLoading,
+    mutate: mutateHistory,
+  } = useSWR("/webhook/billing-history", fetcher, { revalidateOnFocus: true });
+  const invoices: {
+    id: string;
+    date: string;
+    amount: string;
+    status: string;
+    url: string | null;
+  }[] = historyData?.invoices ?? [];
 
   // Modal states
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -47,36 +68,86 @@ export default function BillingPage() {
   const [recoverySubscriptionId, setRecoverySubscriptionId] = useState("");
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
   const [isCheckoutSuccess, setIsCheckoutSuccess] = useState(false);
-  
+
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [cancelLookupId, setCancelLookupId] = useState("");
   const [cancelInputId, setCancelInputId] = useState("");
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
-  const [cancelResult, setCancelResult] = useState<{ effectiveAt: number | null; alreadyCancelled?: boolean } | null>(null);
-  const { data: subscriptionData, error: subscriptionError, isLoading: subscriptionLoading, mutate: mutateSubscription } = useSWR(
-    isCancelOpen ? `/webhook/subscription${cancelLookupId ? `?subscriptionId=${encodeURIComponent(cancelLookupId)}` : ""}` : null,
+  const [cancelResult, setCancelResult] = useState<{
+    effectiveAt: number | null;
+    alreadyCancelled?: boolean;
+  } | null>(null);
+  const {
+    data: subscriptionData,
+    error: subscriptionError,
+    isLoading: subscriptionLoading,
+    mutate: mutateSubscription,
+  } = useSWR(
+    isCancelOpen
+      ? `/webhook/subscription${cancelLookupId ? `?subscriptionId=${encodeURIComponent(cancelLookupId)}` : ""}`
+      : null,
     async (url: string) => {
       const response = await fetch(url);
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Could not load subscription");
-      return data as { subscription: { id: string; status: string; currentEnd: number | null; cancellationScheduled: boolean; canCancel: boolean } | null };
-    }, { revalidateOnFocus: false }
+      if (!response.ok)
+        throw new Error(data.error || "Could not load subscription");
+      return data as {
+        subscription: {
+          id: string;
+          status: string;
+          currentEnd: number | null;
+          cancellationScheduled: boolean;
+          canCancel: boolean;
+        } | null;
+      };
+    },
+    { revalidateOnFocus: false },
   );
   const subscription = subscriptionData?.subscription;
-  const endDate = (seconds: number | null | undefined) => seconds ? new Date(seconds * 1000).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "the end of your paid period";
-  const openCancellation = () => { setCancelError(""); setCancelResult(null); setIsCancelOpen(true); void mutateSubscription(); };
+  const endDate = (seconds: number | null | undefined) =>
+    seconds
+      ? new Date(seconds * 1000).toLocaleString(undefined, {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })
+      : "the end of your paid period";
+  const openCancellation = () => {
+    setCancelError("");
+    setCancelResult(null);
+    setIsCancelOpen(true);
+    void mutateSubscription();
+  };
   const cancelSubscription = async () => {
     if (!subscription?.canCancel || isCancelling) return;
-    setIsCancelling(true); setCancelError("");
+    setIsCancelling(true);
+    setCancelError("");
     try {
-      const response = await fetch("/webhook/razorpay-cancel", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ subscriptionId: subscription.id, confirmed: true }) });
+      const response = await fetch("/webhook/razorpay-cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscriptionId: subscription.id,
+          confirmed: true,
+        }),
+      });
       const data = await response.json();
-      if (!response.ok || data.success !== true) throw new Error(data.error || "Cancellation was not confirmed");
-      setCancelResult({ effectiveAt: data.effectiveAt, alreadyCancelled: data.alreadyCancelled });
+      if (!response.ok || data.success !== true)
+        throw new Error(data.error || "Cancellation was not confirmed");
+      setCancelResult({
+        effectiveAt: data.effectiveAt,
+        alreadyCancelled: data.alreadyCancelled,
+      });
       void mutateSubscription();
-    } catch (error) { setCancelError(error instanceof Error ? error.message : "Cancellation was not confirmed. Refresh the status."); }
-    finally { setIsCancelling(false); }
+    } catch (error) {
+      setCancelError(
+        error instanceof Error
+          ? error.message
+          : "Cancellation was not confirmed. Refresh the status.",
+      );
+    } finally {
+      setIsCancelling(false);
+    }
   };
 
   // Enterprise form states
@@ -85,7 +156,7 @@ export default function BillingPage() {
   const [workEmail, setWorkEmail] = useState("");
   const [agentVolume, setAgentVolume] = useState("1-10");
   const [validationEstimate, setValidationEstimate] = useState("");
-  
+
   // Systems checkboxes
   const [systems, setSystems] = useState({
     email: false,
@@ -98,7 +169,8 @@ export default function BillingPage() {
   const [onPremise, setOnPremise] = useState(false);
   const [useCase, setUseCase] = useState("");
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
-  const [formSubmittedSuccessfully, setFormSubmittedSuccessfully] = useState(false);
+  const [formSubmittedSuccessfully, setFormSubmittedSuccessfully] =
+    useState(false);
   const [formError, setFormError] = useState("");
 
   const handleSystemChange = (key: keyof typeof systems) => {
@@ -126,13 +198,21 @@ export default function BillingPage() {
     setCheckoutError("");
     try {
       const response = await fetch("/webhook/razorpay-verify", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(callback || { subscriptionId: recoverySubscriptionId.trim() || undefined }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          callback || {
+            subscriptionId: recoverySubscriptionId.trim() || undefined,
+          },
+        ),
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || data?.success !== true) {
         setPaymentNeedsReview(true);
-        setCheckoutError(data?.error || "Activation is still pending. Retry activation; do not make another payment.");
+        setCheckoutError(
+          data?.error ||
+            "Activation is still pending. Retry activation; do not make another payment.",
+        );
         return;
       }
       setIsCheckoutSuccess(true);
@@ -142,7 +222,9 @@ export default function BillingPage() {
       void mutateHistory();
     } catch {
       setPaymentNeedsReview(true);
-      setCheckoutError("Activation was interrupted. Check activation again without making another payment.");
+      setCheckoutError(
+        "Activation was interrupted. Check activation again without making another payment.",
+      );
     } finally {
       setIsProcessingCheckout(false);
     }
@@ -151,13 +233,17 @@ export default function BillingPage() {
   const handleConfirmPayment = async () => {
     if (isProcessingCheckout || paymentNeedsReview) return;
     if (usageError || !usageData) {
-      setCheckoutError("Your account usage is unavailable. Restore the connection before starting checkout.");
+      setCheckoutError(
+        "Your account usage is unavailable. Restore the connection before starting checkout.",
+      );
       return;
     }
     setCheckoutError("");
     setIsProcessingCheckout(true);
     try {
-      const res = await fetch("/webhook/razorpay-subscribe", { method: "POST" });
+      const res = await fetch("/webhook/razorpay-subscribe", {
+        method: "POST",
+      });
       if (!res.ok) {
         const failure = await res.json().catch(() => null);
         if (failure?.code === "SUBSCRIPTION_EXISTS") {
@@ -166,8 +252,15 @@ export default function BillingPage() {
           setIsProcessingCheckout(false);
           return;
         }
+        if (failure?.code === "PAYMENTS_UNAVAILABLE") {
+          setCheckoutError(failure.error);
+          setIsProcessingCheckout(false);
+          return;
+        }
         if (failure?.code === "PLAN_MISMATCH") {
-          setCheckoutError("Pro checkout is being updated to ₹799/month. Please try again later.");
+          setCheckoutError(
+            "Pro checkout is being updated to ₹799/month. Please try again later.",
+          );
           setIsProcessingCheckout(false);
           return;
         }
@@ -192,14 +285,19 @@ export default function BillingPage() {
           await restoreSubscription(response);
         },
         modal: {
-          ondismiss: () => { setIsProcessingCheckout(false); setIsCheckoutOpen(true); },
+          ondismiss: () => {
+            setIsProcessingCheckout(false);
+            setIsCheckoutOpen(true);
+          },
         },
       });
       setIsCheckoutOpen(false);
       rzp.open();
     } catch (err) {
       console.error("Checkout failed to start:", err);
-      setCheckoutError("Could not start checkout. Check your connection and try again.");
+      setCheckoutError(
+        "Could not start checkout. Check your connection and try again.",
+      );
       setIsProcessingCheckout(false);
     }
   };
@@ -217,7 +315,7 @@ export default function BillingPage() {
     setIsSubmittingForm(true);
     try {
       const selectedSystems = Object.keys(systems).filter(
-        (key) => systems[key as keyof typeof systems]
+        (key) => systems[key as keyof typeof systems],
       );
 
       const response = await fetch("/webhook/contact-sales", {
@@ -259,228 +357,773 @@ export default function BillingPage() {
 
   return (
     <div className="dash-page dash-fit-page dash-billing">
-      <PageHeader title="Billing" description="Your plan, validation usage, and payment history."><Status tone="neutral">{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</Status><button className="dash-button" onClick={() => { setIsCheckoutSuccess(false); setPaymentNeedsReview(true); setCheckoutError(""); setIsCheckoutOpen(true); }}>Restore paid subscription</button>{userPlan === "Free" && <button className="dash-button" onClick={openCancellation}>Manage subscription</button>}</PageHeader>
-      <nav className="dash-segments dash-billing-tabs" aria-label="Billing views">{[["usage", "Usage"], ["plans", "Plans"], ["history", "History"], ["enterprise", "Enterprise"]].map(([value, label]) => <button key={value} aria-pressed={billingView === value} onClick={() => setBillingView(value)}>{label}</button>)}</nav>
-      <div className="dash-billing-view" tabIndex={0} role="region" aria-label={billingView === "usage" ? "Current usage" : billingView === "plans" ? "Subscription plans" : billingView === "history" ? "Payment history" : "Enterprise inquiry"}>
-      {billingView === "usage" && <div className="dash-billing-overview">
-      <section className="dash-billing-usage dash-panel">
-        <div className="dash-billing-meter"><div className="dash-section-heading"><h2>{userPlan === "Free" ? "Free validation allowance" : "Monthly validations"}</h2><Status tone={usagePercentage >= 90 ? "amber" : "green"}>{usageError ? "Unavailable" : usageLoading ? "Loading" : usagePercentage >= 90 ? "Near quota" : "Within quota"}</Status></div>
-          {usageError ? <DataState error={usageError} retry={() => void mutateUsage()} title="" /> : <><div className="dash-usage-value"><strong className="dash-mono">{usageLoading ? "—" : monthlyRequests.toLocaleString()}</strong><span>of {requestLimit >= 999999999 ? "unlimited" : requestLimit.toLocaleString()} validations</span></div><div className="dash-quota-track" role="meter" aria-label={userPlan === "Free" ? "Free validations used" : "Monthly validations used"} aria-valuemin={0} aria-valuemax={100} aria-valuenow={usagePercentage}><span style={{ transform: `scaleX(${usagePercentage / 100})`, background: usagePercentage >= 90 ? "var(--ax-amber)" : "var(--primary)" }} /></div><div className="dash-section-heading dash-small dash-muted" style={{ marginTop: 14 }}><span>{usageLoading ? "Loading usage…" : `${usagePercentage.toFixed(1)}% of ${userPlan === "Free" ? "one-time allowance" : "monthly quota"}`}</span><span>Shared across all keys</span></div></>}
-        </div>
-        <div className="dash-billing-current"><h2>{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</h2><p>{!isPlanReady ? "Loading your account’s current plan." : userPlan === "Free" ? "100 one-time validations to try Axon. No monthly refill." : userPlan === "Pro" ? "5,000 monthly validations with semantic judge validation." : "Custom capacity and support for your organization."}</p><strong>{!isPlanReady ? "—" : userPlan === "Free" ? "₹0" : userPlan === "Pro" ? "₹799 / month" : "Custom pricing"}</strong><div className="dash-actions">{!isPlanReady ? <Status tone="neutral">{usageError ? "Plan unavailable" : "Loading plan…"}</Status> : userPlan === "Free" ? <button className="dash-button dash-button-primary" onClick={handleUpgradeClick}>Upgrade to Pro</button> : <><button className="dash-button" onClick={openSales}>Contact sales</button>{userPlan === "Pro" && <button className="dash-button dash-button-quiet" onClick={openCancellation}>Manage subscription</button>}</>}</div></div>
-      </section>
-      </div>}
-      {billingView === "plans" && <div className="dash-billing-overview">
-      {isPlanReady && userPlan === "Free" && <section className="dash-panel dash-plan-comparison" aria-label="Compare subscription plans">
-        <div className="dash-table-scroll"><table className="dash-table"><thead><tr><th>Included</th><th><h3>Free</h3><span className="dash-muted">₹0</span></th><th><h3>Pro</h3><span className="dash-green">₹799 / month</span></th></tr></thead><tbody>{[
-          ["Validations", "100 total · one-time", "5,000 / month"],
-          ["Validation", "JSON schema", "Schema + semantic judge"],
-          ["Log retention", "7 days", "30 days + search"],
-          ["Alerts", "—", "Slack + webhooks"],
-          ["Support", "Community", "Priority SLA"],
-        ].map(([feature, free, pro]) => <tr key={feature}><td>{feature}</td><td className="dash-muted">{free}</td><td>{pro}</td></tr>)}</tbody></table></div><div className="dash-pagination"><Status tone="neutral">Free is your current plan</Status><button className="dash-button dash-button-primary" onClick={handleUpgradeClick}>Upgrade to Pro</button></div>
-      </section>}
-      {userPlan !== "Free" && <section className="dash-panel dash-summary"><h2>{userPlan} plan</h2><p>{userPlan === "Pro" ? "5,000 validations per month, semantic judge validation, 30-day log retention, and priority support." : "Custom capacity and support for your organization."}</p><button className="dash-button" onClick={openSales}>Discuss your plan</button></section>}
-      </div>}
-      {billingView === "history" && <section className="dash-panel"><div className="dash-panel-heading"><div><h2>Payment history</h2><p>Invoices from your subscription payments.</p></div></div>{historyLoading || historyError || !invoices.length ? <DataState loading={historyLoading} error={historyError} retry={() => void mutateHistory()} title="No payments yet" description="Your invoices will appear here after your first subscription charge." /> : <div className="dash-table-scroll"><table className="dash-table"><thead><tr><th>Billing date</th><th>Amount</th><th>Status</th><th>Invoice</th></tr></thead><tbody>{invoices.map(invoice => <tr key={invoice.id}><td className="dash-mono">{invoice.date}</td><td>{invoice.amount}</td><td><Status tone={invoice.status === "PAID" ? "green" : "amber"}>{invoice.status}</Status></td><td>{invoice.url ? <a className="dash-text-link" href={invoice.url} target="_blank" rel="noopener noreferrer"><Download size={14} />View invoice</a> : "—"}</td></tr>)}</tbody></table></div>}</section>
-      }
-      {/* Enterprise Contact Sales Section */}
-      {billingView === "enterprise" && (
-      <section
-        id="contact-sales"
-        className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-6 scroll-mt-24"
+      <PageHeader
+        title="Billing"
+        description="Your plan, validation usage, and payment history."
       >
-        <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-primary/10 p-2 border border-primary/20">
-            <Building className="h-6 w-6 text-primary" />
+        <Status tone="neutral">
+          {isPlanReady ? `${userPlan} plan` : "Checking plan…"}
+        </Status>
+        <button
+          className="dash-button"
+          onClick={() => {
+            setIsCheckoutSuccess(false);
+            setPaymentNeedsReview(true);
+            setCheckoutError("");
+            setIsCheckoutOpen(true);
+          }}
+        >
+          Restore paid subscription
+        </button>
+        {userPlan === "Free" && (
+          <button className="dash-button" onClick={openCancellation}>
+            Manage subscription
+          </button>
+        )}
+      </PageHeader>
+      <nav
+        className="dash-segments dash-billing-tabs"
+        aria-label="Billing views"
+      >
+        {[
+          ["usage", "Usage"],
+          ["plans", "Plans"],
+          ["history", "History"],
+          ["enterprise", "Enterprise"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            aria-pressed={billingView === value}
+            onClick={() => setBillingView(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+      <div
+        className="dash-billing-view"
+        tabIndex={0}
+        role="region"
+        aria-label={
+          billingView === "usage"
+            ? "Current usage"
+            : billingView === "plans"
+              ? "Subscription plans"
+              : billingView === "history"
+                ? "Payment history"
+                : "Enterprise inquiry"
+        }
+      >
+        {billingView === "usage" && (
+          <div className="dash-billing-overview">
+            <section className="dash-billing-usage dash-panel">
+              <div className="dash-billing-meter">
+                <div className="dash-section-heading">
+                  <h2>
+                    {userPlan === "Free"
+                      ? "Free validation allowance"
+                      : "Monthly validations"}
+                  </h2>
+                  <Status tone={usagePercentage >= 90 ? "amber" : "green"}>
+                    {usageError
+                      ? "Unavailable"
+                      : usageLoading
+                        ? "Loading"
+                        : usagePercentage >= 90
+                          ? "Near quota"
+                          : "Within quota"}
+                  </Status>
+                </div>
+                {usageError ? (
+                  <DataState
+                    error={usageError}
+                    retry={() => void mutateUsage()}
+                    title=""
+                  />
+                ) : (
+                  <>
+                    <div className="dash-usage-value">
+                      <strong className="dash-mono">
+                        {usageLoading ? "—" : monthlyRequests.toLocaleString()}
+                      </strong>
+                      <span>
+                        of {requestLimit.toLocaleString()} validations
+                      </span>
+                    </div>
+                    <div
+                      className="dash-quota-track"
+                      role="meter"
+                      aria-label={
+                        userPlan === "Free"
+                          ? "Free validations used"
+                          : "Monthly validations used"
+                      }
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={usagePercentage}
+                    >
+                      <span
+                        style={{
+                          transform: `scaleX(${usagePercentage / 100})`,
+                          background:
+                            usagePercentage >= 90
+                              ? "var(--ax-amber)"
+                              : "var(--primary)",
+                        }}
+                      />
+                    </div>
+                    <div
+                      className="dash-section-heading dash-small dash-muted"
+                      style={{ marginTop: 14 }}
+                    >
+                      <span>
+                        {usageLoading
+                          ? "Loading usage…"
+                          : `${usagePercentage.toFixed(1)}% of ${userPlan === "Free" ? "one-time allowance" : "monthly quota"}`}
+                      </span>
+                      <span>Shared across all keys</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="dash-billing-current">
+                <h2>{isPlanReady ? `${userPlan} plan` : "Checking plan…"}</h2>
+                <p>
+                  {!isPlanReady
+                    ? "Loading your account’s current plan."
+                    : userPlan === "Free"
+                      ? "100 one-time validations to try Axon. No monthly refill."
+                      : userPlan === "Pro"
+                        ? "5,000 monthly validations with semantic judge validation."
+                        : "Custom capacity and support for your organization."}
+                </p>
+                <strong>
+                  {!isPlanReady
+                    ? "—"
+                    : userPlan === "Free"
+                      ? "₹0"
+                      : userPlan === "Pro"
+                        ? "₹799 / month"
+                        : "Custom pricing"}
+                </strong>
+                <div className="dash-actions">
+                  {!isPlanReady ? (
+                    <Status tone="neutral">
+                      {usageError ? "Plan unavailable" : "Loading plan…"}
+                    </Status>
+                  ) : userPlan === "Free" ? (
+                    <button
+                      className="dash-button dash-button-primary"
+                      onClick={handleUpgradeClick}
+                    >
+                      Upgrade to Pro
+                    </button>
+                  ) : (
+                    <>
+                      <button className="dash-button" onClick={openSales}>
+                        Contact sales
+                      </button>
+                      {userPlan === "Pro" && (
+                        <button
+                          className="dash-button dash-button-quiet"
+                          onClick={openCancellation}
+                        >
+                          Manage subscription
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </section>
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-white">Talk to enterprise sales</h3>
-            <p className="text-xs text-muted-foreground">
-              Request details on custom SLA compliance, private cloud hosting, or volume pricing plans.
-            </p>
+        )}
+        {billingView === "plans" && (
+          <div className="dash-billing-overview">
+            {isPlanReady && userPlan === "Free" && (
+              <section
+                className="dash-panel dash-plan-comparison"
+                aria-label="Compare subscription plans"
+              >
+                <div className="dash-table-scroll">
+                  <table className="dash-table">
+                    <thead>
+                      <tr>
+                        <th>Included</th>
+                        <th>
+                          <h3>Free</h3>
+                          <span className="dash-muted">₹0</span>
+                        </th>
+                        <th>
+                          <h3>Pro</h3>
+                          <span className="dash-green">₹799 / month</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        [
+                          "Validations",
+                          "100 total · one-time",
+                          "5,000 / month",
+                        ],
+                        [
+                          "Validation",
+                          "JSON schema",
+                          "Schema + semantic judge",
+                        ],
+                        ["Validation history", "Included", "Included + search"],
+                        ["Alert review", "Included", "Included"],
+                        ["Support", "Community", "Priority SLA"],
+                      ].map(([feature, free, pro]) => (
+                        <tr key={feature}>
+                          <td>{feature}</td>
+                          <td className="dash-muted">{free}</td>
+                          <td>{pro}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="dash-pagination">
+                  <Status tone="neutral">Free is your current plan</Status>
+                  <button
+                    className="dash-button dash-button-primary"
+                    onClick={handleUpgradeClick}
+                  >
+                    Upgrade to Pro
+                  </button>
+                </div>
+              </section>
+            )}
+            {userPlan !== "Free" && (
+              <section className="dash-panel dash-summary">
+                <h2>{userPlan} plan</h2>
+                <p>
+                  {userPlan === "Pro"
+                    ? "5,000 validations per month, semantic judge validation, validation history, and email support."
+                    : "Custom capacity and support for your organization."}
+                </p>
+                <button className="dash-button" onClick={openSales}>
+                  Discuss your plan
+                </button>
+              </section>
+            )}
           </div>
-        </div>
-
-        {formSubmittedSuccessfully ? (
-          <div className="rounded-lg bg-primary/5 border border-primary/20 p-8 text-center space-y-3">
-            <CheckCircle className="h-10 w-10 text-primary mx-auto" />
-            <h4 className="text-lg font-bold text-white">Submission Confirmed</h4>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Thanks! We will reach out within 24 hours to schedule a custom validation pipeline demo.
-            </p>
-          </div>
-        ) : (
-          <form onSubmit={handleSalesSubmit} className="space-y-4">
-            {formError && (
-              <div role="alert" className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400">
-                {formError}
+        )}
+        {billingView === "history" && (
+          <section className="dash-panel">
+            <div className="dash-panel-heading">
+              <div>
+                <h2>Payment history</h2>
+                <p>Invoices from your subscription payments.</p>
+              </div>
+            </div>
+            {historyLoading || historyError || !invoices.length ? (
+              <DataState
+                loading={historyLoading}
+                error={historyError}
+                retry={() => void mutateHistory()}
+                title="No payments yet"
+                description="Your invoices will appear here after your first subscription charge."
+              />
+            ) : (
+              <div className="dash-table-scroll">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Billing date</th>
+                      <th>Amount</th>
+                      <th>Status</th>
+                      <th>Invoice</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {invoices.map((invoice) => (
+                      <tr key={invoice.id}>
+                        <td className="dash-mono">{invoice.date}</td>
+                        <td>{invoice.amount}</td>
+                        <td>
+                          <Status
+                            tone={invoice.status === "PAID" ? "green" : "amber"}
+                          >
+                            {invoice.status}
+                          </Status>
+                        </td>
+                        <td>
+                          {invoice.url ? (
+                            <a
+                              className="dash-text-link"
+                              href={invoice.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Download size={14} />
+                              View invoice
+                            </a>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
-
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label htmlFor="sales-name" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Full Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  id="sales-name" value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Jane Smith"
-                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="sales-company" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Company Name <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  id="sales-company" value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  placeholder="Acme Corp"
-                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div className="sm:col-span-1">
-                <label htmlFor="sales-email" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Work Email <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="email"
-                  required
-                  id="sales-email" value={workEmail}
-                  onChange={(e) => setWorkEmail(e.target.value)}
-                  placeholder="jane@company.com"
-                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-
-              <div className="sm:col-span-1">
-                <label htmlFor="sales-agents" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Agent Volume <span className="text-red-400">*</span>
-                </label>
-                <select
-                  id="sales-agents" value={agentVolume}
-                  onChange={(e) => setAgentVolume(e.target.value)}
-                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary"
-                >
-                  <option value="1-10">1-10 Active Agents</option>
-                  <option value="10-50">10-50 Active Agents</option>
-                  <option value="50-200">50-200 Active Agents</option>
-                  <option value="200+">200+ Active Agents</option>
-                </select>
-              </div>
-
-              <div className="sm:col-span-1">
-                <label htmlFor="sales-volume" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Monthly Validations Estimate <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  id="sales-volume" value={validationEstimate}
-                  onChange={(e) => setValidationEstimate(e.target.value)}
-                  placeholder="e.g. 5,000,000"
-                  className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            {/* Checkboxes: Systems Touched */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Systems your agents touch
-              </label>
-              <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-5 text-xs">
-                {[
-                  { key: "email", label: "Email Clients" },
-                  { key: "database", label: "Databases" },
-                  { key: "payments", label: "Payments (Stripe)" },
-                  { key: "customerChat", label: "Customer Chat" },
-                  { key: "internalApis", label: "Internal APIs" },
-                ].map((item) => (
-                  <label
-                    key={item.key}
-                    className="flex items-center gap-2 rounded-lg border border-border bg-[#080b0a] px-3 py-2 cursor-pointer select-none transition-colors hover:border-primary/50"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={systems[item.key as keyof typeof systems]}
-                      onChange={() => handleSystemChange(item.key as keyof typeof systems)}
-                      className="rounded border-border text-primary focus:ring-0 h-4 w-4 bg-[#080b0a]"
-                    />
-                    <span>{item.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Toggle: Need on-premise deployment? */}
-            <div className="flex items-center gap-3">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide select-none">
-                Need on-premise deployment?
-              </label>
-              <button
-                type="button" role="switch" aria-checked={onPremise} aria-label="On-premise deployment"
-                onClick={() => setOnPremise(!onPremise)}
-                className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  onPremise ? "bg-primary" : "bg-muted"
-                }`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-[#0a0d0c] shadow ring-0 transition duration-200 ease-in-out ${
-                    onPremise ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-              <span className="text-xs font-semibold text-white">{onPremise ? "Yes" : "No"}</span>
-            </div>
-
-            {/* Text Area: Use Case */}
-            <div>
-              <label htmlFor="sales-use-case" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                Describe your use case
-              </label>
-              <textarea
-                id="sales-use-case" value={useCase}
-                onChange={(e) => setUseCase(e.target.value)}
-                placeholder="Explain the workflow validation pipeline you want to establish..."
-                rows={3}
-                className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isSubmittingForm}
-              className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm px-6 py-2.5 transition-colors disabled:opacity-50"
-            >
-              {isSubmittingForm ? "Submitting Inquiry..." : "Submit Inquiry"}
-            </button>
-          </form>
+          </section>
         )}
-      </section>
+        {/* Enterprise Contact Sales Section */}
+        {billingView === "enterprise" && (
+          <section
+            id="contact-sales"
+            className="rounded-xl border border-border/50 bg-[#0a0d0c]/30 p-6 space-y-6 scroll-mt-24"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-lg bg-primary/10 p-2 border border-primary/20">
+                <Building className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white">
+                  Talk to enterprise sales
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Discuss capacity, deployment, and support requirements.
+                </p>
+              </div>
+            </div>
 
-      )}
+            {formSubmittedSuccessfully ? (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-8 text-center space-y-3">
+                <CheckCircle className="h-10 w-10 text-primary mx-auto" />
+                <h4 className="text-lg font-bold text-white">
+                  Submission Confirmed
+                </h4>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  Thanks! Your inquiry has been sent to the team.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSalesSubmit} className="space-y-4">
+                {formError && (
+                  <div
+                    role="alert"
+                    className="rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-xs text-red-400"
+                  >
+                    {formError}
+                  </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="sales-name"
+                      className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5"
+                    >
+                      Full Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      id="sales-name"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Jane Smith"
+                      className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="sales-company"
+                      className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5"
+                    >
+                      Company Name <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      id="sales-company"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Acme Corp"
+                      className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="sm:col-span-1">
+                    <label
+                      htmlFor="sales-email"
+                      className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5"
+                    >
+                      Work Email <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      id="sales-email"
+                      value={workEmail}
+                      onChange={(e) => setWorkEmail(e.target.value)}
+                      placeholder="jane@company.com"
+                      className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-1">
+                    <label
+                      htmlFor="sales-agents"
+                      className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5"
+                    >
+                      Agent Volume <span className="text-red-400">*</span>
+                    </label>
+                    <select
+                      id="sales-agents"
+                      value={agentVolume}
+                      onChange={(e) => setAgentVolume(e.target.value)}
+                      className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary"
+                    >
+                      <option value="1-10">1-10 Active Agents</option>
+                      <option value="10-50">10-50 Active Agents</option>
+                      <option value="50-200">50-200 Active Agents</option>
+                      <option value="200+">200+ Active Agents</option>
+                    </select>
+                  </div>
+
+                  <div className="sm:col-span-1">
+                    <label
+                      htmlFor="sales-volume"
+                      className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5"
+                    >
+                      Monthly Validations Estimate{" "}
+                      <span className="text-red-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      id="sales-volume"
+                      value={validationEstimate}
+                      onChange={(e) => setValidationEstimate(e.target.value)}
+                      placeholder="e.g. 5,000,000"
+                      className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                    />
+                  </div>
+                </div>
+
+                {/* Checkboxes: Systems Touched */}
+                <div className="space-y-2">
+                  <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Systems your agents touch
+                  </label>
+                  <div className="grid gap-2 sm:grid-cols-3 md:grid-cols-5 text-xs">
+                    {[
+                      { key: "email", label: "Email Clients" },
+                      { key: "database", label: "Databases" },
+                      { key: "payments", label: "Payments (Stripe)" },
+                      { key: "customerChat", label: "Customer Chat" },
+                      { key: "internalApis", label: "Internal APIs" },
+                    ].map((item) => (
+                      <label
+                        key={item.key}
+                        className="flex items-center gap-2 rounded-lg border border-border bg-[#080b0a] px-3 py-2 cursor-pointer select-none transition-colors hover:border-primary/50"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={systems[item.key as keyof typeof systems]}
+                          onChange={() =>
+                            handleSystemChange(item.key as keyof typeof systems)
+                          }
+                          className="rounded border-border text-primary focus:ring-0 h-4 w-4 bg-[#080b0a]"
+                        />
+                        <span>{item.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Toggle: Need on-premise deployment? */}
+                <div className="flex items-center gap-3">
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide select-none">
+                    Need on-premise deployment?
+                  </label>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={onPremise}
+                    aria-label="On-premise deployment"
+                    onClick={() => setOnPremise(!onPremise)}
+                    className={`relative inline-flex h-5 w-10 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                      onPremise ? "bg-primary" : "bg-muted"
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-[#0a0d0c] shadow ring-0 transition duration-200 ease-in-out ${
+                        onPremise ? "translate-x-5" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-xs font-semibold text-white">
+                    {onPremise ? "Yes" : "No"}
+                  </span>
+                </div>
+
+                {/* Text Area: Use Case */}
+                <div>
+                  <label
+                    htmlFor="sales-use-case"
+                    className="block text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5"
+                  >
+                    Describe your use case
+                  </label>
+                  <textarea
+                    id="sales-use-case"
+                    value={useCase}
+                    onChange={(e) => setUseCase(e.target.value)}
+                    placeholder="Explain the workflow validation pipeline you want to establish..."
+                    rows={3}
+                    className="w-full rounded-lg border border-border bg-[#080b0a] px-3.5 py-2 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmittingForm}
+                  className="rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-sm px-6 py-2.5 transition-colors disabled:opacity-50"
+                >
+                  {isSubmittingForm
+                    ? "Submitting Inquiry..."
+                    : "Submit Inquiry"}
+                </button>
+              </form>
+            )}
+          </section>
+        )}
       </div>
-      {isCheckoutOpen && <DashboardDialog title={isCheckoutSuccess ? "Subscription restored" : paymentNeedsReview ? "Activate your subscription" : "Upgrade to Axon Pro"} busy={isProcessingCheckout} onClose={() => setIsCheckoutOpen(false)}>{isCheckoutSuccess ? <DataState title="You're on Pro" description="Your payment was verified and your plan has been updated." /> : <><p>{paymentNeedsReview ? "Check an existing payment and finish activating Pro. This does not charge you again." : "5,000 validations per month, semantic judge validation, and longer log retention."}</p><dl className="dash-definition"><div><dt>Plan</dt><dd>Axon Pro</dd></div><div><dt>Billed monthly</dt><dd>₹799</dd></div></dl><p style={{ marginTop: 20 }}>{paymentNeedsReview ? "We will verify the subscription directly with Razorpay before updating your account." : "Renews monthly. Review the final amount in Razorpay before confirming payment."}</p>{paymentNeedsReview && <><label htmlFor="restore-subscription">Subscription ID (optional if already saved)</label><input className="dash-input" id="restore-subscription" value={recoverySubscriptionId} onChange={event => setRecoverySubscriptionId(event.target.value)} placeholder="sub_…" autoComplete="off" /><p>For an earlier payment, use its subscription ID from Razorpay.</p></>}{checkoutError && <div className="dash-field-error" role="alert">{checkoutError}</div>}<div className="dash-actions"><button className="dash-button dash-button-primary" disabled={isProcessingCheckout} onClick={() => paymentNeedsReview ? void restoreSubscription() : void handleConfirmPayment()}>{isProcessingCheckout ? "Please wait…" : paymentNeedsReview ? "Check activation — no payment" : "Continue to payment"}</button></div></>}</DashboardDialog>}
-      {isCancelOpen && <DashboardDialog title={cancelResult || subscription?.cancellationScheduled ? "Renewal cancelled" : "Cancel subscription"} busy={isCancelling} onClose={() => setIsCancelOpen(false)}>
-        {cancelResult ? <><p>{cancelResult.alreadyCancelled ? "Renewal is already cancelled. No further cancellation request was sent." : `Your subscription will not renew. Pro access remains available until ${endDate(cancelResult.effectiveAt)}.`}</p><div className="dash-actions"><button className="dash-button dash-button-primary" onClick={() => setIsCancelOpen(false)}>Done</button></div></> : subscriptionLoading ? <DataState loading title="Loading subscription" /> : subscriptionError ? <><p role="alert">{subscriptionError.message}</p><button className="dash-button" onClick={() => void mutateSubscription()}>Refresh status</button></> : subscription ? <>
-          <p className="dash-mono dash-small">{subscription.id}</p>
-          {subscription.cancellationScheduled ? <p>Renewal is cancelled. Pro access remains available until {endDate(subscription.currentEnd)}.</p> : subscription.canCancel ? <><p>Your subscription will stop renewing at the end of the current billing period. Pro access remains available until <strong>{endDate(subscription.currentEnd)}</strong>.</p><p>This does not refund the current payment.</p></> : <p>This subscription is {subscription.status}. No cancellation action is available for its current state.</p>}
-          {cancelError && <div className="dash-field-error" role="alert">{cancelError}</div>}
-          <div className="dash-actions"><button className="dash-button" disabled={isCancelling} onClick={() => setIsCancelOpen(false)}>{subscription.canCancel ? "Keep subscription" : "Close"}</button>{subscription.canCancel && <button className="dash-button dash-button-danger" disabled={isCancelling} onClick={() => void cancelSubscription()}>{isCancelling ? "Cancelling renewal…" : "Cancel renewal"}</button>}<button className="dash-button dash-button-quiet" disabled={isCancelling} onClick={() => void mutateSubscription()}>Refresh status</button></div>
-        </> : <p>No saved subscription was found. Enter its Razorpay subscription ID below to load it.</p>}
-        {!cancelResult && !subscriptionLoading && <details className="dash-key-help"><summary>Manage another subscription</summary><form onSubmit={event => { event.preventDefault(); setCancelError(""); setCancelLookupId(cancelInputId.trim()); }}><label htmlFor="cancel-subscription-id" style={{ marginTop: 20 }}>Load a different subscription</label><input className="dash-input" id="cancel-subscription-id" value={cancelInputId} onChange={event => setCancelInputId(event.target.value)} placeholder="sub_…" required pattern="sub_[a-zA-Z0-9]+" disabled={isCancelling} /><div className="dash-actions"><button className="dash-button" disabled={isCancelling || !cancelInputId.trim()}>Load subscription</button></div></form></details>}
-      </DashboardDialog>}
+      {isCheckoutOpen && (
+        <DashboardDialog
+          title={
+            isCheckoutSuccess
+              ? "Subscription restored"
+              : paymentNeedsReview
+                ? "Activate your subscription"
+                : "Upgrade to Axon Pro"
+          }
+          busy={isProcessingCheckout}
+          onClose={() => setIsCheckoutOpen(false)}
+        >
+          {isCheckoutSuccess ? (
+            <DataState
+              title="You're on Pro"
+              description="Your payment was verified and your plan has been updated."
+            />
+          ) : (
+            <>
+              <p>
+                {paymentNeedsReview
+                  ? "Check an existing payment and finish activating Pro. This does not charge you again."
+                  : "5,000 validations per month, semantic judge validation, and searchable validation history."}
+              </p>
+              <dl className="dash-definition">
+                <div>
+                  <dt>Plan</dt>
+                  <dd>Axon Pro</dd>
+                </div>
+                <div>
+                  <dt>Billed monthly</dt>
+                  <dd>₹799</dd>
+                </div>
+              </dl>
+              <p style={{ marginTop: 20 }}>
+                {paymentNeedsReview
+                  ? "We will verify the subscription directly with Razorpay before updating your account."
+                  : "Renews monthly. Review the final amount in Razorpay before confirming payment."}
+              </p>
+              {paymentNeedsReview && (
+                <>
+                  <label htmlFor="restore-subscription">
+                    Subscription ID (optional if already saved)
+                  </label>
+                  <input
+                    className="dash-input"
+                    id="restore-subscription"
+                    value={recoverySubscriptionId}
+                    onChange={(event) =>
+                      setRecoverySubscriptionId(event.target.value)
+                    }
+                    placeholder="sub_…"
+                    autoComplete="off"
+                  />
+                  <p>
+                    For an earlier payment, use its subscription ID from
+                    Razorpay.
+                  </p>
+                </>
+              )}
+              {checkoutError && (
+                <div className="dash-field-error" role="alert">
+                  {checkoutError}
+                </div>
+              )}
+              <div className="dash-actions">
+                <button
+                  className="dash-button dash-button-primary"
+                  disabled={isProcessingCheckout}
+                  onClick={() =>
+                    paymentNeedsReview
+                      ? void restoreSubscription()
+                      : void handleConfirmPayment()
+                  }
+                >
+                  {isProcessingCheckout
+                    ? "Please wait…"
+                    : paymentNeedsReview
+                      ? "Check activation — no payment"
+                      : "Continue to payment"}
+                </button>
+              </div>
+            </>
+          )}
+        </DashboardDialog>
+      )}
+      {isCancelOpen && (
+        <DashboardDialog
+          title={
+            cancelResult || subscription?.cancellationScheduled
+              ? "Renewal cancelled"
+              : "Cancel subscription"
+          }
+          busy={isCancelling}
+          onClose={() => setIsCancelOpen(false)}
+        >
+          {cancelResult ? (
+            <>
+              <p>
+                {cancelResult.alreadyCancelled
+                  ? "Renewal is already cancelled. No further cancellation request was sent."
+                  : `Your subscription will not renew. Pro access remains available until ${endDate(cancelResult.effectiveAt)}.`}
+              </p>
+              <div className="dash-actions">
+                <button
+                  className="dash-button dash-button-primary"
+                  onClick={() => setIsCancelOpen(false)}
+                >
+                  Done
+                </button>
+              </div>
+            </>
+          ) : subscriptionLoading ? (
+            <DataState loading title="Loading subscription" />
+          ) : subscriptionError ? (
+            <>
+              <p role="alert">{subscriptionError.message}</p>
+              <button
+                className="dash-button"
+                onClick={() => void mutateSubscription()}
+              >
+                Refresh status
+              </button>
+            </>
+          ) : subscription ? (
+            <>
+              <p className="dash-mono dash-small">{subscription.id}</p>
+              {subscription.cancellationScheduled ? (
+                <p>
+                  Renewal is cancelled. Pro access remains available until{" "}
+                  {endDate(subscription.currentEnd)}.
+                </p>
+              ) : subscription.canCancel ? (
+                <>
+                  <p>
+                    Your subscription will stop renewing at the end of the
+                    current billing period. Pro access remains available until{" "}
+                    <strong>{endDate(subscription.currentEnd)}</strong>.
+                  </p>
+                  <p>This does not refund the current payment.</p>
+                </>
+              ) : (
+                <p>
+                  This subscription is {subscription.status}. No cancellation
+                  action is available for its current state.
+                </p>
+              )}
+              {cancelError && (
+                <div className="dash-field-error" role="alert">
+                  {cancelError}
+                </div>
+              )}
+              <div className="dash-actions">
+                <button
+                  className="dash-button"
+                  disabled={isCancelling}
+                  onClick={() => setIsCancelOpen(false)}
+                >
+                  {subscription.canCancel ? "Keep subscription" : "Close"}
+                </button>
+                {subscription.canCancel && (
+                  <button
+                    className="dash-button dash-button-danger"
+                    disabled={isCancelling}
+                    onClick={() => void cancelSubscription()}
+                  >
+                    {isCancelling ? "Cancelling renewal…" : "Cancel renewal"}
+                  </button>
+                )}
+                <button
+                  className="dash-button dash-button-quiet"
+                  disabled={isCancelling}
+                  onClick={() => void mutateSubscription()}
+                >
+                  Refresh status
+                </button>
+              </div>
+            </>
+          ) : (
+            <p>
+              No saved subscription was found. Enter its Razorpay subscription
+              ID below to load it.
+            </p>
+          )}
+          {!cancelResult && !subscriptionLoading && (
+            <details className="dash-key-help">
+              <summary>Manage another subscription</summary>
+              <form
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  setCancelError("");
+                  setCancelLookupId(cancelInputId.trim());
+                }}
+              >
+                <label
+                  htmlFor="cancel-subscription-id"
+                  style={{ marginTop: 20 }}
+                >
+                  Load a different subscription
+                </label>
+                <input
+                  className="dash-input"
+                  id="cancel-subscription-id"
+                  value={cancelInputId}
+                  onChange={(event) => setCancelInputId(event.target.value)}
+                  placeholder="sub_…"
+                  required
+                  pattern="sub_[a-zA-Z0-9]+"
+                  disabled={isCancelling}
+                />
+                <div className="dash-actions">
+                  <button
+                    className="dash-button"
+                    disabled={isCancelling || !cancelInputId.trim()}
+                  >
+                    Load subscription
+                  </button>
+                </div>
+              </form>
+            </details>
+          )}
+        </DashboardDialog>
+      )}
+      <PrivacySettings />
     </div>
   );
 }

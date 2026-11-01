@@ -276,3 +276,5 @@
 }
 
 @media (max-width: 850px) { .dash-billing .dash-page-header { flex-wrap: wrap; } .dash-billing .dash-page-header > div:first-child { flex-basis: 100%; min-width: 0; } .dash-billing .dash-header-actions { width: 100%; flex-wrap: wrap; } }
+
+.dash-account-settings {flex:none !important;min-height:0 !important;} .dash-account-settings summary {cursor:pointer;font-weight:600;} .dash-account-settings[open] {max-height:55vh;overflow:auto;} .dash-account-settings form {display:grid;gap:10px;} .dash-account-settings ul {padding-left:18px;}

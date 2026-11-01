@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@clerk/nextjs";
-import { ArrowRight, Terminal, ShieldCheck, Braces, Brain, Gavel } from "lucide-react";
+import {
+  ArrowRight,
+  Terminal,
+  ShieldCheck,
+  Braces,
+  Brain,
+  Gavel,
+} from "lucide-react";
 
 const mono = "var(--font-geist-mono)";
 
@@ -17,7 +24,13 @@ export function Hero() {
   };
 
   return (
-    <section style={{ position: "relative", overflow: "hidden", padding: "52px 40px 64px" }}>
+    <section
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        padding: "52px 40px 64px",
+      }}
+    >
       {/* grid + glow */}
       <div
         style={{
@@ -26,7 +39,8 @@ export function Hero() {
           backgroundImage:
             "linear-gradient(rgba(55,227,155,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(55,227,155,.05) 1px,transparent 1px)",
           backgroundSize: "60px 60px",
-          maskImage: "radial-gradient(ellipse 90% 60% at 50% 0%,#000 30%,transparent 75%)",
+          maskImage:
+            "radial-gradient(ellipse 90% 60% at 50% 0%,#000 30%,transparent 75%)",
         }}
       />
       <div
@@ -92,7 +106,10 @@ export function Hero() {
               textWrap: "balance",
             }}
           >
-            Nothing your agent<br />writes reaches prod<br />
+            Nothing your agent
+            <br />
+            writes reaches prod
+            <br />
             <span style={{ color: "#37e39b" }}>unverified.</span>
           </h1>
           <p
@@ -103,9 +120,9 @@ export function Hero() {
               color: "#8b9a93",
             }}
           >
-            Axon sits between your AI agents and your production systems. Every output
-            passes schema validation, a semantic judge, and your own policy rules before
-            it is allowed to execute.
+            Axon sits between your AI agents and your production systems. Every
+            output passes schema validation, a semantic judge, and your own
+            policy rules before it is allowed to execute.
           </p>
           <div style={{ display: "flex", gap: 12, marginTop: 26 }}>
             <button
@@ -157,18 +174,35 @@ export function Hero() {
             }}
           >
             {[
-              ["41", "ms", "P50 ADDED LATENCY"],
-              ["3", "", "VALIDATION LAYERS"],
-              ["99.9", "%", "API UPTIME"],
+              ["100", "", "FREE VALIDATIONS"],
+              ["2", "", "EXECUTION MODES"],
+              ["5,000", "", "PRO / MONTH"],
             ].map(([n, unit, label]) => (
-              <div key={label} style={{ background: "#0a0d0c", padding: "18px 20px" }}>
-                <div style={{ font: "700 26px/1 var(--font-geist-sans)", letterSpacing: "-.03em" }}>
+              <div
+                key={label}
+                style={{ background: "#0a0d0c", padding: "18px 20px" }}
+              >
+                <div
+                  style={{
+                    font: "700 26px/1 var(--font-geist-sans)",
+                    letterSpacing: "-.03em",
+                  }}
+                >
                   {n}
-                  {unit && <span style={{ fontSize: 14, color: "#5b6b64" }}>{unit}</span>}
+                  {unit && (
+                    <span style={{ fontSize: 14, color: "#5b6b64" }}>
+                      {unit}
+                    </span>
+                  )}
                 </div>
                 <div
                   className="ax-mono"
-                  style={{ marginTop: 7, font: `600 9px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}
+                  style={{
+                    marginTop: 7,
+                    font: `600 9px/1 ${mono}`,
+                    letterSpacing: ".16em",
+                    color: "#5b6b64",
+                  }}
                 >
                   {label}
                 </div>
@@ -198,10 +232,28 @@ export function Hero() {
                 background: "#0d100f",
               }}
             >
-              <div className="ax-mono" style={{ display: "flex", alignItems: "center", gap: 8, font: `600 10px/1 ${mono}`, letterSpacing: ".14em", color: "#8b9a93" }}>
-                <ShieldCheck style={{ width: 13, height: 13, color: "#37e39b" }} /> PIPELINE · LIVE
+              <div
+                className="ax-mono"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  font: `600 10px/1 ${mono}`,
+                  letterSpacing: ".14em",
+                  color: "#8b9a93",
+                }}
+              >
+                <ShieldCheck
+                  style={{ width: 13, height: 13, color: "#37e39b" }}
+                />{" "}
+                ILLUSTRATIVE PIPELINE
               </div>
-              <div className="ax-mono" style={{ font: `500 10px/1 ${mono}`, color: "#46534d" }}>agent_id: support-agent-01</div>
+              <div
+                className="ax-mono"
+                style={{ font: `500 10px/1 ${mono}`, color: "#46534d" }}
+              >
+                agent_id: support-agent-01
+              </div>
             </div>
 
             <div style={{ padding: "18px 16px 16px" }}>
@@ -216,27 +268,78 @@ export function Hero() {
                   color: "#8b9a93",
                 }}
               >
-                <span style={{ color: "#46534d" }}>// incoming agent output</span>
+                <span style={{ color: "#46534d" }}>
+                  {"// incoming agent output"}
+                </span>
                 <br />
                 {"{ "}
-                <span style={{ color: "#a78bfa" }}>&quot;action_type&quot;</span>:{" "}
-                <span style={{ color: "#37e39b" }}>&quot;payment&quot;</span>,<br />
-                &nbsp;&nbsp;<span style={{ color: "#a78bfa" }}>&quot;amount&quot;</span>:{" "}
-                <span style={{ color: "#ffb347" }}>248000</span>,<br />
-                &nbsp;&nbsp;<span style={{ color: "#a78bfa" }}>&quot;destination&quot;</span>:{" "}
-                <span style={{ color: "#37e39b" }}>&quot;acct_9f21&quot;</span> {"}"}
+                <span style={{ color: "#a78bfa" }}>
+                  &quot;action_type&quot;
+                </span>
+                : <span style={{ color: "#37e39b" }}>&quot;payment&quot;</span>,
+                <br />
+                &nbsp;&nbsp;
+                <span style={{ color: "#a78bfa" }}>
+                  &quot;amount&quot;
+                </span>: <span style={{ color: "#ffb347" }}>248000</span>,<br />
+                &nbsp;&nbsp;
+                <span style={{ color: "#a78bfa" }}>
+                  &quot;destination&quot;
+                </span>
+                :{" "}
+                <span style={{ color: "#37e39b" }}>&quot;acct_9f21&quot;</span>{" "}
+                {"}"}
               </div>
 
               {/* scan connector */}
-              <div style={{ height: 22, marginLeft: 20, borderLeft: "1px solid rgba(140,255,190,.16)", position: "relative", overflow: "hidden", marginTop: 6 }}>
-                <div style={{ position: "absolute", left: -2, top: 0, width: 3, height: 8, background: "#37e39b", borderRadius: 2, animation: "axScan 2.6s linear infinite" }} />
+              <div
+                style={{
+                  height: 22,
+                  marginLeft: 20,
+                  borderLeft: "1px solid rgba(140,255,190,.16)",
+                  position: "relative",
+                  overflow: "hidden",
+                  marginTop: 6,
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    left: -2,
+                    top: 0,
+                    width: 3,
+                    height: 8,
+                    background: "#37e39b",
+                    borderRadius: 2,
+                    animation: "axScan 2.6s linear infinite",
+                  }}
+                />
               </div>
 
-              <PipelineRow icon={<Braces style={{ width: 14, height: 14 }} />} color="#37e39b" title="Layer 1 · Schema" sub="payment.v3 · 6 fields · strict" verdict="PASS" />
+              <PipelineRow
+                icon={<Braces style={{ width: 14, height: 14 }} />}
+                color="#37e39b"
+                title="Layer 1 · Schema"
+                sub="payment.v3 · 6 fields · strict"
+                verdict="PASS"
+              />
               <Connector color="rgba(140,255,190,.16)" />
-              <PipelineRow icon={<Brain style={{ width: 14, height: 14 }} />} color="#a78bfa" title="Layer 2 · Semantic judge" sub="intent aligned · confidence 0.96" verdict="PASS" />
+              <PipelineRow
+                icon={<Brain style={{ width: 14, height: 14 }} />}
+                color="#a78bfa"
+                title="Layer 2 · Semantic judge"
+                sub="intent aligned · confidence 0.96"
+                verdict="PASS"
+              />
               <Connector color="rgba(255,95,86,.3)" />
-              <PipelineRow icon={<Gavel style={{ width: 14, height: 14 }} />} color="#ff5f56" title="Layer 3 · Policy" sub="amount > ₹50,000 requires human approval" subColor="#ff9b95" verdict="BLOCK" />
+              <PipelineRow
+                icon={<Gavel style={{ width: 14, height: 14 }} />}
+                color="#ff5f56"
+                title="Layer 3 · Policy"
+                sub="amount > ₹50,000 requires human approval"
+                subColor="#ff9b95"
+                verdict="BLOCK"
+              />
 
               <div
                 className="ax-mono"
@@ -252,7 +355,9 @@ export function Hero() {
                 }}
               >
                 <span>execution halted · 63ms</span>
-                <span style={{ color: "#ff5f56" }}>alert dispatched → #sec-ops</span>
+                <span style={{ color: "#ff5f56" }}>
+                  alert dispatched → #sec-ops
+                </span>
               </div>
             </div>
           </div>
@@ -269,7 +374,11 @@ export function Hero() {
 }
 
 function Connector({ color }: { color: string }) {
-  return <div style={{ height: 22, marginLeft: 20, borderLeft: `1px solid ${color}` }} />;
+  return (
+    <div
+      style={{ height: 22, marginLeft: 20, borderLeft: `1px solid ${color}` }}
+    />
+  );
 }
 
 function PipelineRow({
@@ -300,12 +409,35 @@ function PipelineRow({
         padding: "12px 13px",
       }}
     >
-      <div style={{ width: 26, height: 26, flex: "none", borderRadius: 7, background: tint, display: "flex", alignItems: "center", justifyContent: "center", color }}>
+      <div
+        style={{
+          width: 26,
+          height: 26,
+          flex: "none",
+          borderRadius: 7,
+          background: tint,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color,
+        }}
+      >
         {icon}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ font: "600 12px/1.2 var(--font-geist-sans)" }}>{title}</div>
-        <div className="ax-mono" style={{ font: "400 10px/1.3 var(--font-geist-mono)", color: subColor, marginTop: 3 }}>{sub}</div>
+        <div style={{ font: "600 12px/1.2 var(--font-geist-sans)" }}>
+          {title}
+        </div>
+        <div
+          className="ax-mono"
+          style={{
+            font: "400 10px/1.3 var(--font-geist-mono)",
+            color: subColor,
+            marginTop: 3,
+          }}
+        >
+          {sub}
+        </div>
       </div>
       <span
         className="ax-mono"

@@ -1,0 +1,124 @@
+{
+  "name": "Axon Validation Status — staging hardened",
+  "nodes": [
+    {
+      "id": "711f5c79-4a8b-be01-2426-0e225826b839",
+      "name": "Status Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "validation-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "7208c03b-942c-1add-dc26-8c0fc0fd5f62",
+      "name": "Authenticate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        600
+      ],
+      "parameters": {
+        "jsCode": "const key=/^Bearer (sk-axon-[a-f0-9]{48})$/i.exec(String($json.headers?.authorization||''))?.[1]||'';const id=String($json.query?.request_id||'');if(!/^validation:[a-f0-9]{64}$/.test(id))throw Error('INVALID_REQUEST_ID');return [{json:{hash:require('crypto').createHash('sha256').update(key).digest('hex'),id}}];"
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "3904798e-b71a-ce03-e17c-e29f5dd33c9d",
+      "name": "Read Status",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        800,
+        600
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT j.state,j.result,j.error_code,j.delivery_state FROM axon_security.validation_jobs j JOIN public.api_keys k ON k.user_id=j.user_id WHERE k.hashed_api_key=$1 AND k.is_active AND k.expires_at>now() AND j.request_id=$2 LIMIT 1",
+        "options": {
+          "queryReplacement": "={{ [$json.hash,$json.id] }}"
+        }
+      },
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "id": "9eaf1f1a-8c90-a113-7359-9ce355bdd555",
+      "name": "Respond Status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        1000,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ !$json.state ? {status:\"NOT_FOUND\",validated:false} : {status:$json.result?.verdict||($json.state===\"failed\"?\"ERROR\":\"PROCESSING\"),validated:!!$json.result,reason:$json.result?.reason||null,job_state:$json.state,delivery:$json.delivery_state,execution_confirmed:false} }}",
+        "options": {
+          "responseCode": "={{ $json.state ? 200 : 404 }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Cache-Control",
+                "value": "private, no-store"
+              }
+            ]
+          }
+        }
+      },
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Status Webhook": {
+      "main": [
+        [
+          {
+            "node": "Authenticate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Authenticate": {
+      "main": [
+        [
+          {
+            "node": "Read Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Status": {
+      "main": [
+        [
+          {
+            "node": "Respond Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  }
+}

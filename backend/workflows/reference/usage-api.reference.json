@@ -1,0 +1,241 @@
+{
+  "name": "Usage API — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1264,
+        0
+      ],
+      "id": "0402b736-e600-63fb-e16c-3e41b502a051",
+      "name": "Respond to Webhook",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "path": "usage",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "33f460dc-34b9-0a0d-9cf5-9635b75242b3",
+      "name": "Webhook",
+      "webhookId": "a4f06cb9-8a93-4f5a-a403-ea85b8d9a034",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst auth = ($json.headers && $json.headers.authorization) || '';\nconst rawKey = auth.replace('Bearer ', '').trim();\n\nconst hashedKey = crypto\n  .createHash('sha256')\n  .update(rawKey)\n  .digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    hashed_key: hashedKey\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f2c959d2-5a5d-5d67-9b7d-f8a387da5f1d",
+      "name": "Code in JavaScript1",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM api_keys\nWHERE hashed_api_key = $1\nAND is_active = true\nAND expires_at > NOW();",
+        "options": {
+          "queryReplacement": "={{$json.hashed_key}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        416,
+        0
+      ],
+      "id": "f9931c61-3497-97aa-8c8d-4cf9ce272722",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "8a2b9bcd-2eb0-43cf-9e49-e34f0a57f612",
+              "leftValue": "={{$json.id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "4aed5900-5254-8794-cadf-7e6e2e942298",
+      "name": "If",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{\"status\":\"401\",\"message\":\"Invalid API Key\"}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        96
+      ],
+      "id": "14ba23a6-5f6c-fbd2-a1e0-1d9898619320",
+      "name": "Code in JavaScript",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH usage AS (\n  SELECT\n    k.user_id,\n    a.plan,\n    k.expires_at,\n    CASE\n      WHEN a.plan = 'free' THEN a.free_used\n      ELSE a.paid_used\n    END AS used,\n    CASE a.plan\n      WHEN 'free' THEN 100\n      WHEN 'pro' THEN 5000\n      ELSE a.custom_limit\n    END AS quota,\n    a.period_start,\n    a.period_end,\n    (\n      a.plan = 'free'\n      OR (\n        now() >= a.period_start\n        AND now() < a.period_end\n      )\n    ) AS period_active\n  FROM public.api_keys k\n  JOIN public.axon_account_quota a\n    ON a.user_id = k.user_id\n  WHERE k.hashed_api_key = $1\n    AND k.is_active = true\n    AND k.expires_at > now()\n)\nSELECT\n  user_id,\n  plan,\n  used AS monthly_requests,\n  quota AS request_limit,\n  CASE\n    WHEN period_active THEN GREATEST(quota - used, 0)\n    ELSE 0\n  END AS remaining,\n  expires_at,\n  period_start,\n  period_end,\n  COALESCE(period_active, false) AS period_active,\n  CASE\n    WHEN plan = 'free' THEN 'lifetime'\n    ELSE 'billing_period'\n  END AS quota_period\nFROM usage;",
+        "options": {
+          "queryReplacement": "={{ [ $node[\"Code in JavaScript1\"].json.hashed_key ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1056,
+        0
+      ],
+      "id": "26e42592-f14c-7a8d-4f04-0802b1768e2a",
+      "name": "Execute a SQL query",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n \"status\":\"401\",\n \"message\":\"Invalid API Key\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1088,
+        192
+      ],
+      "id": "3e1af1b0-2aa9-e3d0-4bae-88e10130268d",
+      "name": "Respond to Webhook1",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

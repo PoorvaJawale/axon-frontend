@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { axonGet, getAxonContext } from "@/lib/axon";
-
+import { accountRoute } from "@/lib/account";
+import { query } from "@/lib/db";
+import { mapLog } from "@/lib/account-data";
+import { readObject, positiveInteger, HttpError } from "@/lib/security/http";
 export type WebhookAlert = {
   id: string;
   timestamp: string;
@@ -9,87 +10,63 @@ export type WebhookAlert = {
   description: string;
   blockedOutput: string;
   agentId: string;
-  actionType: "email" | "database" | "payment" | "chat" | "api_call";
+  actionType: string;
   reviewed: boolean;
 };
-
-const ACTION_MAP: Record<string, WebhookAlert["actionType"]> = {
-  email_send: "email",
-  db_write: "database",
-  payment: "payment",
-  live_chat: "chat",
-  api_call: "api_call",
-  internal_reasoning: "api_call",
-};
-
-function severityOf(risk: unknown): WebhookAlert["severity"] {
-  const r = String(risk ?? "").toUpperCase();
-  if (r === "CRITICAL" || r === "HIGH") return "HIGH";
-  if (r === "MEDIUM") return "MEDIUM";
-  return "LOW";
+export async function GET(request: Request) {
+  return accountRoute(request, async (userId) => {
+    const filter = new URL(request.url).searchParams.get("filter") || "All";
+    if (!["All", "Reviewed", "Unreviewed"].includes(filter))
+      throw new HttpError(400, "INVALID_FILTER", "Invalid alert filter.");
+    const rows = await query(
+      "SELECT l.*,COALESCE(r.reviewed,false) AS reviewed FROM public.validation_logs l LEFT JOIN axon_security.alert_reviews r ON r.user_id=l.user_id AND r.alert_id=l.id WHERE l.user_id=$1 AND l.final_verdict='BLOCK' AND ($2='All' OR COALESCE(r.reviewed,false)=($2='Reviewed')) ORDER BY l.timestamp DESC,l.id DESC LIMIT 200",
+      [userId, filter],
+    );
+    return {
+      alerts: rows.map((r) => {
+        const l = mapLog(r);
+        return {
+          id: l.id,
+          timestamp: l.time,
+          severity: ["HIGH", "CRITICAL"].includes(
+            String(r.risk_level).toUpperCase(),
+          )
+            ? "HIGH"
+            : String(r.risk_level).toUpperCase() === "MEDIUM"
+              ? "MEDIUM"
+              : "LOW",
+          title: "Blocked " + l.actionType + " output",
+          description: l.reason,
+          blockedOutput: l.outputContent,
+          agentId: l.agentId,
+          actionType: l.actionType,
+          reviewed: !!r.reviewed,
+        };
+      }),
+      limit: 200,
+    };
+  });
 }
-
-function titleOf(category: unknown, actionType: string): string {
-  const c = String(category ?? "").trim();
-  const labels: Record<string, string> = {
-    HALLUCINATION: "Hallucinated Content Blocked",
-    POLICY: "Policy Violation Blocked",
-    SAFETY: "Unsafe Output Blocked",
-    COMPLIANCE: "Compliance Issue Blocked",
-  };
-  return labels[c.toUpperCase()] ?? `Blocked ${actionType} output`;
-}
-
-export async function GET(_req: NextRequest) {
-  const ctx = await getAxonContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { ok, data } = await axonGet("/webhook/alerts", ctx.apiKey);
-  if (!ok) {
-    return NextResponse.json({ error: "Alerts unavailable" }, { status: 502 });
-  }
-
-  const rows: Record<string, unknown>[] = Array.isArray(data)
-    ? data
-    : data
-      ? [data]
-      : [];
-
-  const alerts: WebhookAlert[] = rows
-    .filter((r) => r && r.id !== undefined)
-    .map((row) => {
-      const actionType = ACTION_MAP[String(row.action_type)] ?? "api_call";
-      return {
-        id: String(row.id),
-        timestamp: String(row.timestamp ?? "").replace("T", " ").slice(0, 19),
-        severity: severityOf(row.risk_level),
-        title: titleOf(row.category, actionType),
-        description: String(row.reason ?? "Semantic validation failed"),
-        blockedOutput: String(row.reason ?? ""),
-        agentId: String(row.user_id ?? "—"),
-        actionType,
-        reviewed: false,
-      };
-    });
-
-  const { searchParams } = new URL(_req.url);
-  const filter = searchParams.get("filter") || "All";
-  // Review state is not persisted server-side yet — everything is "Unreviewed".
-  const result = filter === "Reviewed" ? [] : alerts;
-
-  return NextResponse.json({ alerts: result });
-}
-
-export async function POST(req: NextRequest) {
-  const ctx = await getAxonContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  // Reviewed-state persistence needs a backend column; acknowledged as no-op for now.
-  try {
-    await req.json();
-  } catch {}
-  return NextResponse.json({ success: true });
+export async function POST(request: Request) {
+  return accountRoute(
+    request,
+    async (userId) => {
+      const b = await readObject(request);
+      const id = positiveInteger(b.alertId, 0, Number.MAX_SAFE_INTEGER);
+      if (!id || typeof b.reviewed !== "boolean")
+        throw new HttpError(
+          400,
+          "INVALID_FIELD",
+          "Supply an alert ID and a boolean review state.",
+        );
+      const rows = await query(
+        "INSERT INTO axon_security.alert_reviews(user_id,alert_id,reviewed,reviewed_at) SELECT $1,id,$3,now() FROM public.validation_logs WHERE user_id=$1 AND id=$2 AND final_verdict='BLOCK' ON CONFLICT(user_id,alert_id) DO UPDATE SET reviewed=EXCLUDED.reviewed,reviewed_at=EXCLUDED.reviewed_at RETURNING alert_id",
+        [userId, id, b.reviewed],
+      );
+      if (!rows.length)
+        throw new HttpError(404, "NOT_FOUND", "Alert not found.");
+      return { success: true, reviewed: b.reviewed };
+    },
+    { write: true, scope: "alert-review", maximum: 30 },
+  );
 }

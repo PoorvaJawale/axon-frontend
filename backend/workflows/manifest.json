@@ -1,0 +1,67 @@
+[
+  {
+    "file": "validationproject.hardened.json",
+    "name": "Axon Validation — staging hardened",
+    "sha256": "86c7651db4aadc9bc2eed98d40ce4b33e5abb4bccc7e80373439da7acadce1cd"
+  },
+  {
+    "file": "background-worker.hardened.json",
+    "name": "Axon Background Worker — staging hardened",
+    "sha256": "0ee1d40c0d0226fd11aac8116b5af2c7e4d6925f198ed8f3a6997d1f0d6a77eb"
+  },
+  {
+    "file": "validation-status.hardened.json",
+    "name": "Axon Validation Status — staging hardened",
+    "sha256": "18ebb9850d8aad26a8880202cfc61bda59ba4a7cca707285ec9b19b5f6e12d74"
+  },
+  {
+    "file": "reference/alerts-api.reference.json",
+    "name": "Alerts API — staging reference",
+    "sha256": "c3e6e49f87aab87940d0dedd8dbd7b38016cfbfc28d85eb33a34ca7fe7a55647"
+  },
+  {
+    "file": "reference/api-keys-api.reference.json",
+    "name": "API Keys API — staging reference",
+    "sha256": "894046385ff950f6337a329ad7d76ab23203fca4a578610573e07c73e9443a1a"
+  },
+  {
+    "file": "reference/axon-health.reference.json",
+    "name": "Axon Health — staging reference",
+    "sha256": "70f247746fa079595ca776a4cbdde9c146515b1020bb472e9600043ae49492b5"
+  },
+  {
+    "file": "reference/billing-update.reference.json",
+    "name": "Billing Update — staging reference",
+    "sha256": "6b272938d3ac041bd386032eb401e247456c233afcf4fee3d8b3240f0c3fda35"
+  },
+  {
+    "file": "reference/error-handler.reference.json",
+    "name": "Error Handler — staging reference",
+    "sha256": "0f3d288e3949aa3f1522f48e9283b73097cec6fd65c1dbc8a70ef1d78ad0a3ce"
+  },
+  {
+    "file": "reference/logs-api.reference.json",
+    "name": "Logs API — staging reference",
+    "sha256": "3dc9e5b00d366ced5699a109a392ffb4133777119a878b34ee25c9a747234b9b"
+  },
+  {
+    "file": "reference/monthly-usage-reset.reference.json",
+    "name": "Monthly Usage Reset — staging reference",
+    "sha256": "4d46c1b9380999353c74e6ea9dd22bfca084a2f45078f81affe3bffec330b7c5"
+  },
+  {
+    "file": "reference/revoke-key-api.reference.json",
+    "name": "Revoke Key API — staging reference",
+    "sha256": "3b6539ac384b50b30db916bc49aab991a085d69a42ac8abd82a506a3357ea7da"
+  },
+  {
+    "file": "reference/usage-api.reference.json",
+    "name": "Usage API — staging reference",
+    "sha256": "54a4d3b22974d960265247cf88fdce7e3d86c84672ddaa9eb3c6d479511a4062"
+  },
+  {
+    "file": "reference/api-key-workflow.reference.json",
+    "name": "API Key Workflow — staging reference",
+    "sha256": "eef80bed16739bd391ecd120c01cecd51a16fbd2d5d1444cb783edab25531841"
+  }
+]

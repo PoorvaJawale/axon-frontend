@@ -25,7 +25,7 @@ export function Header() {
 
   return (
     <div style={{ position: "sticky", top: 0, zIndex: 40 }}>
-      {/* Live ticker */}
+      {/* Illustrative event ticker */}
       <div
         style={{
           overflow: "hidden",
@@ -36,7 +36,26 @@ export function Header() {
           alignItems: "center",
         }}
       >
-        <div style={{ display: "flex", width: "200%", animation: "axTicker 34s linear infinite" }}>
+        <span
+          style={{
+            flex: "none",
+            padding: "0 14px",
+            fontSize: 10,
+            color: "#b1c0b7",
+            background: "#090c0b",
+            zIndex: 1,
+          }}
+        >
+          Example events
+        </span>
+        <div
+          aria-hidden="true"
+          style={{
+            display: "flex",
+            width: "200%",
+            animation: "axTicker 34s linear infinite",
+          }}
+        >
           {[0, 1].map((k) => (
             <div
               key={k}
@@ -74,20 +93,41 @@ export function Header() {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 44 }}>
-          <Link href="/" style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <Link
+            href="/"
+            style={{ display: "flex", alignItems: "center", gap: 9 }}
+          >
             <BrandMark size={36} />
-            <span style={{ font: "800 17px/1 var(--font-geist-sans)", letterSpacing: "-.03em", color: "#e8edea" }}>
+            <span
+              style={{
+                font: "800 17px/1 var(--font-geist-sans)",
+                letterSpacing: "-.03em",
+                color: "#e8edea",
+              }}
+            >
               Axon
             </span>
           </Link>
           <nav
             className="hidden md:flex"
-            style={{ gap: 26, font: "500 13px/1 var(--font-geist-sans)", color: "#8b9a93" }}
+            style={{
+              gap: 26,
+              font: "500 13px/1 var(--font-geist-sans)",
+              color: "#8b9a93",
+            }}
           >
-            <Link href="/#features" style={{ color: "#8b9a93" }}>Platform</Link>
-            <Link href="/#pricing" style={{ color: "#8b9a93" }}>Pricing</Link>
-            <Link href="/docs" style={{ color: "#8b9a93" }}>Docs</Link>
-            <Link href="/#security" style={{ color: "#8b9a93" }}>Security</Link>
+            <Link href="/#features" style={{ color: "#8b9a93" }}>
+              Platform
+            </Link>
+            <Link href="/#pricing" style={{ color: "#8b9a93" }}>
+              Pricing
+            </Link>
+            <Link href="/docs" style={{ color: "#8b9a93" }}>
+              Docs
+            </Link>
+            <Link href="/#security" style={{ color: "#8b9a93" }}>
+              Security
+            </Link>
           </nav>
         </div>
 
@@ -96,14 +136,26 @@ export function Header() {
             <div style={{ width: 120, height: 34 }} />
           ) : isSignedIn ? (
             <>
-              <Link href="/dashboard" style={{ font: "500 13px/1 var(--font-geist-sans)", color: "#c3cec8" }}>
+              <Link
+                href="/dashboard"
+                style={{
+                  font: "500 13px/1 var(--font-geist-sans)",
+                  color: "#c3cec8",
+                }}
+              >
                 Dashboard
               </Link>
               <UserButton />
             </>
           ) : (
             <>
-              <Link href="/sign-in" style={{ font: "500 13px/1 var(--font-geist-sans)", color: "#c3cec8" }}>
+              <Link
+                href="/sign-in"
+                style={{
+                  font: "500 13px/1 var(--font-geist-sans)",
+                  color: "#c3cec8",
+                }}
+              >
                 Sign in
               </Link>
               <Link

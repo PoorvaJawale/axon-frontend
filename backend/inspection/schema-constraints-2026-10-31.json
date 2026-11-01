@@ -1,0 +1,287 @@
+{
+  "indexes": [
+    {
+      "table": "api_keys",
+      "definition": "CREATE UNIQUE INDEX api_keys_pkey ON public.api_keys USING btree (id)"
+    },
+    {
+      "table": "api_keys",
+      "definition": "CREATE UNIQUE INDEX api_keys_hashed_api_key_key ON public.api_keys USING btree (hashed_api_key)"
+    },
+    {
+      "table": "api_keys",
+      "definition": "CREATE INDEX idx_api_keys_user ON public.api_keys USING btree (user_id)"
+    },
+    {
+      "table": "api_keys",
+      "definition": "CREATE INDEX idx_api_keys_hashed ON public.api_keys USING btree (hashed_api_key)"
+    },
+    {
+      "table": "validation_logs",
+      "definition": "CREATE UNIQUE INDEX validation_logs_pkey ON public.validation_logs USING btree (id)"
+    },
+    {
+      "table": "validation_logs",
+      "definition": "CREATE INDEX idx_logs_user_time ON public.validation_logs USING btree (user_id, \"timestamp\" DESC)"
+    },
+    {
+      "table": "validation_logs",
+      "definition": "CREATE INDEX idx_logs_blocked ON public.validation_logs USING btree (user_id) WHERE (final_verdict = 'BLOCK'::text)"
+    },
+    {
+      "table": "async_validation_jobs",
+      "definition": "CREATE UNIQUE INDEX async_validation_jobs_pkey ON public.async_validation_jobs USING btree (id)"
+    },
+    {
+      "table": "async_validation_jobs",
+      "definition": "CREATE UNIQUE INDEX async_validation_jobs_request_id_key ON public.async_validation_jobs USING btree (request_id)"
+    },
+    {
+      "table": "axon_account_quota",
+      "definition": "CREATE UNIQUE INDEX axon_account_quota_pkey ON public.axon_account_quota USING btree (user_id)"
+    },
+    {
+      "table": "axon_quota_reservation",
+      "definition": "CREATE UNIQUE INDEX axon_quota_reservation_pkey ON public.axon_quota_reservation USING btree (request_id)"
+    },
+    {
+      "table": "axon_quota_reservation",
+      "definition": "CREATE INDEX axon_quota_reservation_user_id_idx ON public.axon_quota_reservation USING btree (user_id)"
+    }
+  ],
+  "constraints": [
+    {
+      "name": "api_keys_id_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL id"
+    },
+    {
+      "name": "api_keys_user_id_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL user_id"
+    },
+    {
+      "name": "api_keys_hashed_api_key_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL hashed_api_key"
+    },
+    {
+      "name": "api_keys_plan_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL plan"
+    },
+    {
+      "name": "api_keys_request_limit_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL request_limit"
+    },
+    {
+      "name": "api_keys_monthly_requests_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL monthly_requests"
+    },
+    {
+      "name": "api_keys_is_active_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL is_active"
+    },
+    {
+      "name": "api_keys_created_at_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "name": "api_keys_updated_at_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL updated_at"
+    },
+    {
+      "name": "api_keys_expires_at_not_null",
+      "table": "api_keys",
+      "definition": "NOT NULL expires_at"
+    },
+    {
+      "name": "api_keys_pkey",
+      "table": "api_keys",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "api_keys_hashed_api_key_key",
+      "table": "api_keys",
+      "definition": "UNIQUE (hashed_api_key)"
+    },
+    {
+      "name": "validation_logs_id_not_null",
+      "table": "validation_logs",
+      "definition": "NOT NULL id"
+    },
+    {
+      "name": "validation_logs_timestamp_not_null",
+      "table": "validation_logs",
+      "definition": "NOT NULL \"timestamp\""
+    },
+    {
+      "name": "validation_logs_pkey",
+      "table": "validation_logs",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "async_validation_jobs_id_not_null",
+      "table": "async_validation_jobs",
+      "definition": "NOT NULL id"
+    },
+    {
+      "name": "async_validation_jobs_request_id_not_null",
+      "table": "async_validation_jobs",
+      "definition": "NOT NULL request_id"
+    },
+    {
+      "name": "async_validation_jobs_status_not_null",
+      "table": "async_validation_jobs",
+      "definition": "NOT NULL status"
+    },
+    {
+      "name": "async_validation_jobs_created_at_not_null",
+      "table": "async_validation_jobs",
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "name": "async_validation_jobs_pkey",
+      "table": "async_validation_jobs",
+      "definition": "PRIMARY KEY (id)"
+    },
+    {
+      "name": "async_validation_jobs_request_id_key",
+      "table": "async_validation_jobs",
+      "definition": "UNIQUE (request_id)"
+    },
+    {
+      "name": "axon_account_quota_plan_check",
+      "table": "axon_account_quota",
+      "definition": "CHECK ((plan = ANY (ARRAY['free'::text, 'pro'::text, 'enterprise'::text])))"
+    },
+    {
+      "name": "axon_account_quota_free_used_check",
+      "table": "axon_account_quota",
+      "definition": "CHECK ((free_used >= 0))"
+    },
+    {
+      "name": "axon_account_quota_paid_used_check",
+      "table": "axon_account_quota",
+      "definition": "CHECK ((paid_used >= 0))"
+    },
+    {
+      "name": "axon_account_quota_custom_limit_check",
+      "table": "axon_account_quota",
+      "definition": "CHECK ((custom_limit >= 0))"
+    },
+    {
+      "name": "axon_account_quota_check",
+      "table": "axon_account_quota",
+      "definition": "CHECK ((((period_start IS NULL) AND (period_end IS NULL)) OR ((period_start IS NOT NULL) AND (period_end IS NOT NULL) AND (period_end > period_start))))"
+    },
+    {
+      "name": "axon_account_quota_user_id_not_null",
+      "table": "axon_account_quota",
+      "definition": "NOT NULL user_id"
+    },
+    {
+      "name": "axon_account_quota_plan_not_null",
+      "table": "axon_account_quota",
+      "definition": "NOT NULL plan"
+    },
+    {
+      "name": "axon_account_quota_free_used_not_null",
+      "table": "axon_account_quota",
+      "definition": "NOT NULL free_used"
+    },
+    {
+      "name": "axon_account_quota_paid_used_not_null",
+      "table": "axon_account_quota",
+      "definition": "NOT NULL paid_used"
+    },
+    {
+      "name": "axon_account_quota_custom_limit_not_null",
+      "table": "axon_account_quota",
+      "definition": "NOT NULL custom_limit"
+    },
+    {
+      "name": "axon_account_quota_billing_event_at_not_null",
+      "table": "axon_account_quota",
+      "definition": "NOT NULL billing_event_at"
+    },
+    {
+      "name": "axon_account_quota_pkey",
+      "table": "axon_account_quota",
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    {
+      "name": "axon_quota_reservation_bucket_check",
+      "table": "axon_quota_reservation",
+      "definition": "CHECK ((bucket = ANY (ARRAY['free'::text, 'paid'::text])))"
+    },
+    {
+      "name": "axon_quota_reservation_request_id_not_null",
+      "table": "axon_quota_reservation",
+      "definition": "NOT NULL request_id"
+    },
+    {
+      "name": "axon_quota_reservation_user_id_not_null",
+      "table": "axon_quota_reservation",
+      "definition": "NOT NULL user_id"
+    },
+    {
+      "name": "axon_quota_reservation_bucket_not_null",
+      "table": "axon_quota_reservation",
+      "definition": "NOT NULL bucket"
+    },
+    {
+      "name": "axon_quota_reservation_released_not_null",
+      "table": "axon_quota_reservation",
+      "definition": "NOT NULL released"
+    },
+    {
+      "name": "axon_quota_reservation_created_at_not_null",
+      "table": "axon_quota_reservation",
+      "definition": "NOT NULL created_at"
+    },
+    {
+      "name": "axon_quota_reservation_pkey",
+      "table": "axon_quota_reservation",
+      "definition": "PRIMARY KEY (request_id)"
+    },
+    {
+      "name": "axon_quota_reservation_user_id_fkey",
+      "table": "axon_quota_reservation",
+      "definition": "FOREIGN KEY (user_id) REFERENCES axon_account_quota(user_id)"
+    }
+  ],
+  "triggers": [],
+  "row_security": [
+    {
+      "table": "api_keys",
+      "enabled": false,
+      "forced": false
+    },
+    {
+      "table": "async_validation_jobs",
+      "enabled": false,
+      "forced": false
+    },
+    {
+      "table": "validation_logs",
+      "enabled": false,
+      "forced": false
+    },
+    {
+      "table": "axon_account_quota",
+      "enabled": false,
+      "forced": false
+    },
+    {
+      "table": "axon_quota_reservation",
+      "enabled": false,
+      "forced": false
+    }
+  ]
+}

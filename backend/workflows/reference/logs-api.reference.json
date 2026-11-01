@@ -1,0 +1,267 @@
+{
+  "name": "Logs API — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "logs",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -864,
+        32
+      ],
+      "id": "e5724831-1f5c-f831-194e-35654712439d",
+      "name": "Webhook",
+      "webhookId": "1c209865-f821-4ffa-b41e-13f0388e5c18",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM validation_logs\nWHERE user_id = $1\nORDER BY timestamp DESC\nLIMIT $2\nOFFSET $3;",
+        "options": {
+          "queryReplacement": "={{$node[\"Execute a SQL query1\"].json[\"user_id\"]}}, {{$json.limit}}, {{$json.offset}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        16
+      ],
+      "id": "18590ad9-1e21-1084-b31b-65c8466d6aea",
+      "name": "Execute a SQL query",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        16
+      ],
+      "id": "219d9df4-1433-9d7a-b8b2-6aa0d1e30298",
+      "name": "Respond to Webhook",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\n\nconst auth = ($json.headers && $json.headers.authorization) || '';\nconst rawKey = auth.replace('Bearer ', '').trim();\n\nconst hashedKey = crypto\n  .createHash('sha256')\n  .update(rawKey)\n  .digest('hex');\n\nreturn [{\n  json: {\n    ...$json,\n    hashed_key: hashedKey\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -656,
+        32
+      ],
+      "id": "bbd41c38-ba80-dc91-de2f-2a635ff7b40f",
+      "name": "Code in JavaScript1",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT *\nFROM api_keys\nWHERE hashed_api_key = $1\nAND is_active = true\nAND expires_at > NOW();",
+        "options": {
+          "queryReplacement": "={{$json.hashed_key}}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -448,
+        32
+      ],
+      "id": "52da3ae6-3dbe-31c6-38bc-048e6fb5e571",
+      "name": "Execute a SQL query1",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e4a826b7-3a7b-4c57-8b53-56f42e151690",
+              "leftValue": "={{$json.id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -240,
+        32
+      ],
+      "id": "3cf551c3-17dd-f0fd-1faf-20445cfb88e4",
+      "name": "If",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{json:{\"status\":\"401\",\"message\":\"Invalid API Key\"}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        128
+      ],
+      "id": "ecec9023-2041-7b58-6212-ca85994e4c33",
+      "name": "Code in JavaScript2",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const query = $node[\"Webhook\"].json.query || {};\n\nconst page = parseInt(query.page || 1);\nconst limit = Math.min(parseInt(query.limit || 50), 200);\nconst offset = (page - 1) * limit;\n\nreturn [{\n  json: {\n    ...$json,\n    page,\n    limit,\n    offset\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9d6af0a1-72f0-7eec-c895-898b004f21a2",
+      "name": "Code in JavaScript",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\n \"status\":\"401\",\n \"message\":\"Invalid API Key\"\n}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        192,
+        192
+      ],
+      "id": "a26d8390-98a4-733e-eb5d-7ae00c40e7a3",
+      "name": "Respond to Webhook1",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

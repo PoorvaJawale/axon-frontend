@@ -10,24 +10,24 @@ const layers = [
     color: "#37e39b",
     icon: <Braces style={{ width: 20, height: 20 }} />,
     title: "Schema validation",
-    body: "Strict JSON contracts per action type. Malformed data never touches your database or your UI.",
-    tags: ["strict types", "versioned", "<5ms"],
+    body: "Required fields, supported action types and payload limits are checked before semantic validation.",
+    tags: ["required fields", "payload limits"],
   },
   {
     n: "02",
     color: "#a78bfa",
     icon: <Brain style={{ width: 20, height: 20 }} />,
     title: "Semantic judge",
-    body: "A judge model scores correctness, safety and intent alignment. Syntax-valid nonsense still gets caught.",
-    tags: ["confidence score", "custom rubric"],
+    body: "GPT-4o mini evaluates action content for potential safety and policy risks. Model judgments can be imperfect; keep your own authorization checks.",
+    tags: ["risk level", "confidence score"],
   },
   {
     n: "03",
     color: "#ffb347",
     icon: <BellRing style={{ width: 20, height: 20 }} />,
-    title: "Policy & alerting",
-    body: "Your business rules as code. Blocks route to Slack, PagerDuty or a webhook with the full payload attached.",
-    tags: ["Slack", "PagerDuty", "webhook"],
+    title: "Decisions & alerts",
+    body: "Review blocked actions in the dashboard. Optional dispatch sends approved actions to your verified HTTPS endpoint.",
+    tags: ["review queue", "signed callbacks"],
   },
 ];
 
@@ -47,16 +47,37 @@ export function Features() {
           }}
         >
           <div>
-            <div className="ax-mono" style={{ font: `600 10px/1 ${mono}`, letterSpacing: ".16em", color: "#5b6b64" }}>
+            <div
+              className="ax-mono"
+              style={{
+                font: `600 10px/1 ${mono}`,
+                letterSpacing: ".16em",
+                color: "#5b6b64",
+              }}
+            >
               01 — THE STACK
             </div>
-            <h2 style={{ margin: "16px 0 0", font: "700 44px/1.05 var(--font-geist-sans)", letterSpacing: "-.035em" }}>
-              Three layers, one call
+            <h2
+              style={{
+                margin: "16px 0 0",
+                font: "700 44px/1.05 var(--font-geist-sans)",
+                letterSpacing: "-.035em",
+              }}
+            >
+              A checkpoint before execution
             </h2>
           </div>
-          <p style={{ maxWidth: 360, margin: 0, font: "400 15px/1.6 var(--font-geist-sans)", color: "#8b9a93" }}>
-            Each layer fails closed. An output only executes when all three agree, and every
-            decision is written to an immutable log.
+          <p
+            style={{
+              maxWidth: 360,
+              margin: 0,
+              font: "400 15px/1.6 var(--font-geist-sans)",
+              color: "#8b9a93",
+            }}
+          >
+            Inspect the verdict and delivery state separately. In validate-only
+            mode, your application owns execution; dispatch mode delegates
+            delivery to Axon.
           </p>
         </div>
 
@@ -71,23 +92,55 @@ export function Features() {
           }}
         >
           {layers.map((l) => (
-            <div key={l.n} style={{ background: "#070908", padding: "36px 30px 34px" }}>
-              <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between" }}>
+            <div
+              key={l.n}
+              style={{ background: "#070908", padding: "36px 30px 34px" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "baseline",
+                  justifyContent: "space-between",
+                }}
+              >
                 <span
                   className="ax-mono"
-                  style={{ font: `700 52px/1 ${mono}`, color: l.color + "38", letterSpacing: "-.04em" }}
+                  style={{
+                    font: `700 52px/1 ${mono}`,
+                    color: l.color + "38",
+                    letterSpacing: "-.04em",
+                  }}
                 >
                   {l.n}
                 </span>
                 <span style={{ color: l.color }}>{l.icon}</span>
               </div>
-              <h3 style={{ margin: "26px 0 0", font: "700 21px/1.2 var(--font-geist-sans)", letterSpacing: "-.02em" }}>
+              <h3
+                style={{
+                  margin: "26px 0 0",
+                  font: "700 21px/1.2 var(--font-geist-sans)",
+                  letterSpacing: "-.02em",
+                }}
+              >
                 {l.title}
               </h3>
-              <p style={{ margin: "12px 0 0", font: "400 14px/1.65 var(--font-geist-sans)", color: "#8b9a93" }}>
+              <p
+                style={{
+                  margin: "12px 0 0",
+                  font: "400 14px/1.65 var(--font-geist-sans)",
+                  color: "#8b9a93",
+                }}
+              >
                 {l.body}
               </p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 20 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 6,
+                  marginTop: 20,
+                }}
+              >
                 {l.tags.map((t) => (
                   <span
                     key={t}

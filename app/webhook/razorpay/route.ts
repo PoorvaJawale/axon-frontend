@@ -1,9 +1,16 @@
+import { claimEvent, completeEvent, retryEvent } from "@/lib/billing-state";
+import { readText, failure } from "@/lib/security/http";
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { clerkClient } from "@clerk/nextjs/server";
 import { setUserPlan } from "@/lib/axon";
 import { FREE_VALIDATION_LIMIT } from "@/lib/plans";
-import { activateSubscription, BillingSyncError, fetchSubscription, requireOwnedSubscription } from "@/lib/razorpay";
+import {
+  activateSubscription,
+  BillingSyncError,
+  fetchSubscription,
+  requireOwnedSubscription,
+} from "@/lib/razorpay";
 
 const UPGRADE_EVENTS = [
   "subscription.activated",
@@ -24,16 +31,30 @@ const DOWNGRADE_EVENTS = [
 export async function POST(req: NextRequest) {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   if (!secret) {
-    return NextResponse.json({ error: "Webhook not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Webhook not configured" },
+      { status: 500 },
+    );
   }
 
-  const rawBody = await req.text();
+  let rawBody: string;
+  try {
+    rawBody = await readText(req, 65536);
+  } catch (error) {
+    return failure(error);
+  }
   const signature = req.headers.get("x-razorpay-signature") ?? "";
-  const expected = crypto.createHmac("sha256", secret).update(rawBody).digest("hex");
+  const expected = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
 
   let valid = false;
   try {
-    valid = crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    valid = crypto.timingSafeEqual(
+      Buffer.from(expected),
+      Buffer.from(signature),
+    );
   } catch {
     valid = false;
   }
@@ -44,7 +65,11 @@ export async function POST(req: NextRequest) {
   let event: {
     event?: string;
     created_at?: number;
-    payload?: { subscription?: { entity?: { id?: string; notes?: Record<string, string> } } };
+    payload?: {
+      subscription?: {
+        entity?: { id?: string; notes?: Record<string, string> };
+      };
+    };
   };
   try {
     event = JSON.parse(rawBody);
@@ -60,36 +85,74 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
+  const eventId =
+    req.headers.get("x-razorpay-event-id") ||
+    crypto.createHash("sha256").update(rawBody).digest("hex");
+  if (eventId.length > 200)
+    return NextResponse.json(
+      { error: "Invalid event identity" },
+      { status: 400 },
+    );
+  try {
+    if (
+      !(await claimEvent(
+        eventId,
+        crypto.createHash("sha256").update(rawBody).digest("hex"),
+      ))
+    )
+      return NextResponse.json({ received: true, duplicate: true });
+  } catch (error) {
+    return failure(error);
+  }
   try {
     if (UPGRADE_EVENTS.includes(type) || DOWNGRADE_EVENTS.includes(type)) {
       const id = event.payload?.subscription?.entity?.id;
-      if (!id) return NextResponse.json({ error: "Missing subscription ID" }, { status: 400 });
+      if (!id)
+        return NextResponse.json(
+          { error: "Missing subscription ID" },
+          { status: 400 },
+        );
       const subscription = await fetchSubscription(id);
       requireOwnedSubscription(subscription, clerkUserId);
       // Resolve delayed cancellation/charge events against current provider state.
       if (subscription.status === "active") {
-        const result = await activateSubscription(subscription, clerkUserId, Math.floor(Date.now()/1000));
+        const result = await activateSubscription(
+          subscription,
+          clerkUserId,
+          Math.floor(Date.now() / 1000),
+        );
         if (!result.ignored) {
           const client = await clerkClient();
-          await client.users.updateUserMetadata(clerkUserId, { privateMetadata: { razorpaySubscriptionId: id } });
+          await client.users.updateUserMetadata(clerkUserId, {
+            privateMetadata: { razorpaySubscriptionId: id },
+          });
         }
-      } else if (DOWNGRADE_EVENTS.includes(type) && ["cancelled", "halted", "expired", "completed"].includes(subscription.status)) {
+      } else if (
+        DOWNGRADE_EVENTS.includes(type) &&
+        ["cancelled", "halted", "expired", "completed"].includes(
+          subscription.status,
+        )
+      ) {
         // Do not downgrade a newer/different subscription owned by this user.
         const client = await clerkClient();
         const user = await client.users.getUser(clerkUserId);
         if (user.privateMetadata.razorpaySubscriptionId === id) {
-          await setUserPlan(clerkUserId, "free", FREE_VALIDATION_LIMIT, { occurred_at: Math.floor(Date.now()/1000) });
+          await setUserPlan(clerkUserId, "free", FREE_VALIDATION_LIMIT, {
+            occurred_at: Math.floor(Date.now() / 1000),
+          });
         }
       } else if (UPGRADE_EVENTS.includes(type)) {
         throw new Error("Paid subscription is not active yet");
       }
     }
+    await completeEvent(eventId);
   } catch (err) {
+    await retryEvent(eventId).catch(() => {});
     if (err instanceof BillingSyncError && err.code === "LEGACY_PLAN") {
       console.error("Legacy paid subscription requires migration");
       return NextResponse.json({ received: true, migrationRequired: true });
     }
-    console.error(`Razorpay webhook ${type} handling failed:`, err);
+    console.error("Razorpay webhook handling failed", type);
     // 500 makes Razorpay retry later, which is what we want if our DB was down.
     return NextResponse.json({ error: "Processing failed" }, { status: 500 });
   }

@@ -1,0 +1,190 @@
+{
+  "name": "Billing Update — staging reference",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "billing-update",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -656,
+        80
+      ],
+      "id": "c8d17502-f147-b295-26c2-6797673bc1ac",
+      "name": "Webhook",
+      "webhookId": "b9f1c2d3-0001-4000-8000-000000000001",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "jsCode": "const secret = $env.AXON_SIGNUP_SECRET || \"\";\nconst body = $json.body || {};\nconst supplied = String(\n  ($json.headers || {})[\"x-axon-signup-secret\"] || \"\"\n);\n\nconst plan = body.plan;\nconst paid = plan === \"pro\" || plan === \"enterprise\";\n\nconst validTimestamp = value =>\n  typeof value === \"number\" &&\n  Number.isSafeInteger(value) &&\n  value > 0 &&\n  value <= 253402300799;\n\nconst periodOK =\n  !paid ||\n  (\n    validTimestamp(body.period_start) &&\n    validTimestamp(body.period_end) &&\n    body.period_end > body.period_start\n  );\n\nconst customLimitOK =\n  plan !== \"enterprise\" ||\n  (\n    Number.isSafeInteger(body.enterprise_limit) &&\n    body.enterprise_limit > 0\n  );\n\nconst authorized =\n  secret !== \"\" &&\n  supplied === secret &&\n  typeof body.user_id === \"string\" &&\n  body.user_id.length > 0 &&\n  [\"free\", \"pro\", \"enterprise\"].includes(plan) &&\n  validTimestamp(body.occurred_at) &&\n  body.occurred_at <= Math.floor(Date.now() / 1000) + 300 &&\n  periodOK &&\n  customLimitOK;\n\nreturn [{\n  json: {\n    authorized,\n    user_id: body.user_id,\n    plan,\n    request_limit:\n      plan === \"free\" ? 100 :\n      plan === \"pro\" ? 5000 :\n      body.enterprise_limit,\n    period_start:\n      paid && periodOK\n        ? new Date(body.period_start * 1000).toISOString()\n        : null,\n    period_end:\n      paid && periodOK\n        ? new Date(body.period_end * 1000).toISOString()\n        : null,\n    occurred_at:\n      validTimestamp(body.occurred_at)\n        ? new Date(body.occurred_at * 1000).toISOString()\n        : null,\n    enterprise_limit:\n      plan === \"enterprise\" && customLimitOK\n        ? body.enterprise_limit\n        : 0\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -448,
+        80
+      ],
+      "id": "ac98129d-132f-e030-ec45-610c8b14e221",
+      "name": "Auth Gate",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-0003-4000-8000-000000000003",
+              "leftValue": "={{$json.authorized}}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -224,
+        80
+      ],
+      "id": "63bb9970-dc91-2ce3-65d4-fb4c75638f15",
+      "name": "If Authorized",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT public.axon_apply_billing(\n  $1,\n  $2,\n  $3::timestamptz,\n  $4::timestamptz,\n  $5::timestamptz,\n  $6::bigint\n) AS data;",
+        "options": {
+          "queryReplacement": "={{ [\n  $json.user_id,\n  $json.plan,\n  $json.period_start,\n  $json.period_end,\n  $json.occurred_at,\n  $json.enterprise_limit\n] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "id": "67ad6175-3982-0e60-473d-1e86ce83d78d",
+      "name": "Update Plan",
+      "alwaysOutputData": true,
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.data }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "6a2b182c-aa41-a124-940a-e58a2914cbbf",
+      "name": "Respond Success",
+      "retryOnFail": false
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{ \"success\": false, \"message\": \"Unauthorized or invalid payload\" }",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        208
+      ],
+      "id": "10143939-efea-b3e6-8a67-7c39fdb64c2b",
+      "name": "Respond Unauthorized",
+      "retryOnFail": false
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Auth Gate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auth Gate": {
+      "main": [
+        [
+          {
+            "node": "If Authorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Authorized": {
+      "main": [
+        [
+          {
+            "node": "Update Plan",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Plan": {
+      "main": [
+        [
+          {
+            "node": "Respond Success",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "executionTimeout": 120
+  },
+  "nodeGroups": [],
+  "tags": []
+}

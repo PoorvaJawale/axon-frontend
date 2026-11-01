@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { axonGet, getAxonContext } from "@/lib/axon";
-
+import { accountRoute } from "@/lib/account";
+import { transaction } from "@/lib/db";
+import { mapLog } from "@/lib/account-data";
+import { positiveInteger, boundedString, HttpError } from "@/lib/security/http";
 export type WebhookLogEntry = {
   id: string;
   time: string;
@@ -11,101 +12,66 @@ export type WebhookLogEntry = {
   reason: string;
   outputContent: string;
 };
-
-const ACTION_MAP: Record<string, WebhookLogEntry["actionType"]> = {
-  email_send: "email",
-  db_write: "database",
-  payment: "payment",
-  live_chat: "chat",
-  api_call: "api_call",
-  internal_reasoning: "api_call",
-};
-
-function mapRow(row: Record<string, unknown>): WebhookLogEntry {
-  const raw = row.raw_output as { content?: unknown } | string | null;
-  let output = "";
-  if (raw && typeof raw === "object") {
-    output =
-      typeof raw.content === "string"
-        ? raw.content
-        : JSON.stringify(raw.content ?? raw);
-  } else if (typeof raw === "string") {
-    output = raw;
-  }
-
-  return {
-    id: String(row.id ?? ""),
-    time: String(row.timestamp ?? "").replace("T", " ").slice(0, 19),
-    agentId: String(row.user_id ?? "—"),
-    actionType: ACTION_MAP[String(row.action_type)] ?? "api_call",
-    layerTriggered:
-      row.schema_result === "FAILED" ? "Schema validation" : "Semantic judge",
-    result: row.final_verdict === "PASS" ? "PASS" : "BLOCK",
-    reason: String(row.reason ?? ""),
-    outputContent: output,
-  };
-}
-
-export async function GET(req: NextRequest) {
-  const ctx = await getAxonContext();
-  if (!ctx) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { ok, data } = await axonGet("/webhook/logs?limit=200", ctx.apiKey);
-  if (!ok) {
-    return NextResponse.json({ error: "Logs unavailable" }, { status: 502 });
-  }
-
-  const rows: Record<string, unknown>[] = Array.isArray(data)
-    ? data
-    : data
-      ? [data]
-      : [];
-  const allLogs = rows.filter((r) => r && r.id !== undefined).map(mapRow);
-
-  const stats = {
-    total: allLogs.length,
-    passed: allLogs.filter((l) => l.result === "PASS").length,
-    blocked: allLogs.filter((l) => l.result === "BLOCK").length,
-    asyncFlags: allLogs.filter((l) => l.result === "ASYNC FLAG").length,
-  };
-
-  // Same filter/pagination contract the dashboard already uses
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get("page") || "1", 10);
-  const limit = parseInt(searchParams.get("limit") || "50", 10);
-  const resultFilter = searchParams.get("result") || "All";
-  const actionTypeFilter = searchParams.get("actionType") || "All";
-  const searchQuery = (searchParams.get("search") || "").toLowerCase();
-
-  let filtered = [...allLogs];
-  if (resultFilter !== "All") {
-    filtered = filtered.filter(
-      (l) => l.result.toLowerCase() === resultFilter.toLowerCase()
-    );
-  }
-  if (actionTypeFilter !== "All") {
-    filtered = filtered.filter(
-      (l) => l.actionType.toLowerCase() === actionTypeFilter.toLowerCase()
-    );
-  }
-  if (searchQuery) {
-    filtered = filtered.filter(
-      (l) =>
-        l.agentId.toLowerCase().includes(searchQuery) ||
-        l.reason.toLowerCase().includes(searchQuery) ||
-        l.outputContent.toLowerCase().includes(searchQuery)
-    );
-  }
-
-  const totalCount = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(totalCount / limit));
-  const startIndex = (page - 1) * limit;
-
-  return NextResponse.json({
-    logs: filtered.slice(startIndex, startIndex + limit),
-    stats,
-    pagination: { currentPage: page, limit, totalCount, totalPages },
+export async function GET(request: Request) {
+  return accountRoute(request, async (userId) => {
+    const p = new URL(request.url).searchParams;
+    const page = positiveInteger(p.get("page"), 1, 100000),
+      limit = positiveInteger(p.get("limit"), 50, 100);
+    const verdict = p.get("result") || "All",
+      action = p.get("actionType") || "All";
+    if (!["All", "PASS", "BLOCK", "ASYNC FLAG"].includes(verdict))
+      throw new HttpError(400, "INVALID_FILTER", "Invalid result filter.");
+    const actions: Record<string, string> = {
+      email: "email_send",
+      database: "db_write",
+      payment: "payment",
+      chat: "live_chat",
+      api_call: "api_call",
+    };
+    if (action !== "All" && !actions[action])
+      throw new HttpError(400, "INVALID_FILTER", "Invalid action filter.");
+    const hours = p.get("hours");
+    if (hours !== null && hours !== "24")
+      throw new HttpError(400, "INVALID_FILTER", "Invalid time window.");
+    const search = boundedString(p.get("search") || "", 200, false);
+    return transaction(async (db) => {
+      await db.query(
+        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY",
+      );
+      const filters =
+        "user_id=$1 AND ($5::boolean=false OR timestamp>=now()-interval '24 hours') AND ($2='All' OR final_verdict=$2) AND ($3='All' OR action_type=$3) AND ($4='' OR strpos(lower(COALESCE(reason,'')),lower($4))>0 OR strpos(lower(COALESCE(agent_id,'')),lower($4))>0)";
+      const values = [
+        userId,
+        verdict,
+        actions[action] || "All",
+        search,
+        hours === "24",
+      ];
+      const count = await db.query(
+        "SELECT count(*)::int AS n FROM public.validation_logs WHERE " +
+          filters,
+        values,
+      );
+      const rows = await db.query(
+        "SELECT * FROM public.validation_logs WHERE " +
+          filters +
+          " ORDER BY timestamp DESC,id DESC LIMIT $6 OFFSET $7",
+        [...values, limit, (page - 1) * limit],
+      );
+      const stats = await db.query(
+        "SELECT count(*)::int AS total,count(*) FILTER(WHERE final_verdict='PASS')::int AS passed,count(*) FILTER(WHERE final_verdict='BLOCK')::int AS blocked,count(*) FILTER(WHERE final_verdict NOT IN ('PASS','BLOCK'))::int AS async_flags FROM public.validation_logs WHERE user_id=$1 AND ($2::boolean=false OR timestamp>=now()-interval '24 hours')",
+        [userId, hours === "24"],
+      );
+      return {
+        logs: rows.rows.map(mapLog),
+        stats: { ...stats.rows[0], asyncFlags: stats.rows[0].async_flags },
+        pagination: {
+          currentPage: page,
+          limit,
+          totalCount: count.rows[0].n,
+          totalPages: Math.max(1, Math.ceil(count.rows[0].n / limit)),
+        },
+      };
+    });
   });
 }
