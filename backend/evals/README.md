@@ -8,3 +8,6 @@ The evaluator creates one dummy local account/key, records case IDs/verdicts/tim
 
 
 Verified 1 November 2026: the native local run completed 12/12 correctly classified synthetic cases. The temporary workflow was unpublished afterward and all evaluator fixtures removed. This is a small smoke result, not a measured production error rate. Result details remain in ignored `.cache/staging/model-eval-result.json`; no API keys or raw model responses are recorded there.
+
+
+The continuation adds `beta-synthetic.json` (32 balanced cases) and `heldout-synthetic.json` (12 separately worded balanced cases). Pass the dataset basename to `staging-model-eval.cjs`; each run is bounded to 32 or 16 sequential calls, without automatic retries. `--only-failed` is an explicit, maximum-five-case diagnostic for the beta baseline and writes a separate result. Candidate results and limitations are recorded in [launch acceptance](../../docs/operations/launch-acceptance-2026-11-03.md). Never treat these labels as a production error-rate estimate.

@@ -16,9 +16,24 @@ const secrets = Object.fromEntries(
 const config = JSON.parse(
   fs.readFileSync(path.join(local, "model-eval-config.json"), "utf8"),
 );
-const cases = JSON.parse(
-  fs.readFileSync(path.join(root, "backend/evals/launch-smoke.json"), "utf8"),
+const dataset = process.argv[2] || "launch-smoke";
+if (!["launch-smoke", "beta-synthetic", "heldout-synthetic"].includes(dataset))
+  throw Error("Unknown bounded dataset");
+let cases = JSON.parse(
+  fs.readFileSync(
+    path.join(root, "backend/evals/" + dataset + ".json"),
+    "utf8",
+  ),
 );
+const diagnostic = process.argv.includes("--only-failed");
+if (diagnostic) {
+  if (dataset !== "beta-synthetic") throw Error("Diagnostic dataset refused");
+  const prior = JSON.parse(
+    fs.readFileSync(path.join(local, "beta-model-eval-result.json"), "utf8"),
+  );
+  const failed = new Set(prior.results.filter((r) => !r.pass).map((r) => r.id));
+  cases = cases.filter((c) => failed.has(c.id)).slice(0, 5);
+}
 const user = "model_eval_" + crypto.randomUUID();
 const key = "sk-axon-" + crypto.randomBytes(24).toString("hex");
 const db = new Client({
@@ -32,8 +47,9 @@ const db = new Client({
 });
 async function main() {
   assert(
-    cases.length > 0 && cases.length <= 16,
-    "Bounded evaluation: at most 16 native model calls, no automatic retries",
+    cases.length > 0 &&
+      cases.length <= (dataset === "beta-synthetic" ? 32 : 16),
+    "Bounded evaluation: at most 32 native model calls, no automatic retries",
   );
   assert.match(config.path, /^axon-model-eval-[a-f0-9]{24}$/);
   for (const c of cases) {
@@ -77,9 +93,13 @@ async function main() {
         },
       );
       const text = await response.text();
-      let actual = "INVALID_RESPONSE";
+      let actual = "INVALID_RESPONSE",
+        decisionReason = null;
       try {
-        actual = JSON.parse(text).status || "INVALID_RESPONSE";
+        const body = JSON.parse(text);
+        actual = body.status || "INVALID_RESPONSE";
+        if (typeof body.reason === "string")
+          decisionReason = body.reason.slice(0, 500);
       } catch {
         /* Response contents are not logged. */
       }
@@ -91,6 +111,7 @@ async function main() {
         http: response.status,
         pass,
         latencyMs: Date.now() - started,
+        ...(diagnostic ? { decisionReason } : {}),
       });
       console.log(
         (pass ? "PASS " : "FAIL ") +
@@ -109,7 +130,26 @@ async function main() {
         break;
       }
     }
+    const evaluatedWorkflow = JSON.parse(
+      fs.readFileSync(path.join(local, "n8n/model-eval-workflow.json"), "utf8"),
+    );
+    const evaluatedModel = evaluatedWorkflow.nodes.filter(
+      (n) =>
+        n.type === "n8n-nodes-base.httpRequest" &&
+        n.parameters.url === "https://api.openai.com/v1/chat/completions",
+    );
+    if (evaluatedModel.length !== 1)
+      throw Error("Unexpected evaluated model-node count");
     const report = {
+      requestExpressionSha256: crypto
+        .createHash("sha256")
+        .update(evaluatedModel[0].parameters.jsonBody)
+        .digest("hex"),
+      caseSetSha256: crypto
+        .createHash("sha256")
+        .update(JSON.stringify(cases))
+        .digest("hex"),
+      dataset,
       model: "gpt-4o-mini",
       completedAt: new Date().toISOString(),
       synthetic: true,
@@ -128,7 +168,16 @@ async function main() {
         "Small hand-labeled synthetic smoke set; not evidence of production false-PASS rates, compliance or comprehensive safety.",
     };
     fs.writeFileSync(
-      path.join(local, "model-eval-result.json"),
+      path.join(
+        local,
+        diagnostic
+          ? "beta-model-diagnostic-result.json"
+          : dataset === "launch-smoke"
+            ? "model-eval-result.json"
+            : dataset === "beta-synthetic"
+              ? "beta-model-eval-result.json"
+              : "heldout-model-eval-result.json",
+      ),
       JSON.stringify(report, null, 2),
     );
     console.log(

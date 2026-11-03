@@ -152,7 +152,7 @@ export default function LogsPage() {
           <h2>Decision history</h2>
           <span className="dash-muted dash-small dash-mono">
             {query.data
-              ? `${pagination.totalCount.toLocaleString()} entries`
+              ? `${pagination.totalCount.toLocaleString()} ${pagination.totalCount === 1 ? "entry" : "entries"}`
               : "— entries"}
           </span>
         </div>

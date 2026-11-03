@@ -1,5 +1,7 @@
 # Axon launch implementation checklist
 
+Current continuation: [3 November acceptance and operations](operations/launch-acceptance-2026-11-03.md). Real browser isolation, expanded native model evaluation, billing regressions, stateful alerts and approved guarded backup rotation now have additional evidence there. Offsite storage and external account/policy review remain distinct.
+
 
 Implementation record (1 November 2026): checked items have implementation/test/deployment evidence in [production operations](operations/production-inspection-2026-11-01.md) and [the launch handoff](operations/launch-handoff-2026-10-31.md). Unchecked items retain an external, broader acceptance or future-growth requirement; passing source tests alone does not close them.
 

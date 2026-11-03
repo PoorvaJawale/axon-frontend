@@ -2,12 +2,12 @@
   {
     "file": "validationproject.hardened.json",
     "name": "Axon Validation — staging hardened",
-    "sha256": "86c7651db4aadc9bc2eed98d40ce4b33e5abb4bccc7e80373439da7acadce1cd"
+    "sha256": "eb28e9bf92a2814c08cefc94a5c609619e005e06a1210ebc745316e23efc4a40"
   },
   {
     "file": "background-worker.hardened.json",
     "name": "Axon Background Worker — staging hardened",
-    "sha256": "0ee1d40c0d0226fd11aac8116b5af2c7e4d6925f198ed8f3a6997d1f0d6a77eb"
+    "sha256": "99c5a8ddb122cd881f2b02ea29cf846385e414107f86399bc1dc1289d65f3e75"
   },
   {
     "file": "validation-status.hardened.json",

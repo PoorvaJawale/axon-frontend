@@ -7,7 +7,9 @@ const manifest = JSON.parse(
   fs.readFileSync(path.join(folder, "manifest.json")),
 );
 for (const item of manifest) {
-  const bytes = fs.readFileSync(path.join(folder, item.file));
+  const bytes = fs
+    .readFileSync(path.join(folder, item.file), "utf8")
+    .replace(/\r\n/g, "\n");
   if (crypto.createHash("sha256").update(bytes).digest("hex") !== item.sha256)
     throw Error("Workflow changed: " + item.file);
   const w = JSON.parse(bytes);
