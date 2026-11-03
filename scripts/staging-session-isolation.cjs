@@ -49,7 +49,23 @@ const users = [],
   actors = [],
   checks = [],
   base = "http://localhost:3101";
+let browser;
+const { chromium } = require(
+  path.join(
+    root,
+    ".cache/tools/browser-acceptance/node_modules/@playwright/test",
+  ),
+);
+const { clerk: browserClerk, clerkSetup } = require(
+  path.join(
+    root,
+    ".cache/tools/browser-acceptance/node_modules/@clerk/testing/playwright",
+  ),
+);
 async function call(actor, route, body) {
+  actor.token = await actor.page.evaluate(() =>
+    window.Clerk.session.getToken(),
+  );
   const response = await fetch(base + route, {
     method: body === undefined ? "GET" : "POST",
     headers: {
@@ -75,8 +91,19 @@ function pass(name) {
   console.log("PASS " + name);
 }
 async function main() {
+  process.env.CLERK_SECRET_KEY = settings.CLERK_SECRET_KEY;
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY =
+    settings.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  process.env.TEMP = path.join(local, "browser-temp");
+  process.env.TMP = process.env.TEMP;
   await db.connect();
   try {
+    await clerkSetup({
+      dotenv: false,
+      secretKey: settings.CLERK_SECRET_KEY,
+      publishableKey: settings.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    });
+    browser = await chromium.launch({ channel: "chrome", headless: true });
     for (let i = 0; i < 2; i++) {
       const user = await clerk.users.createUser({
         emailAddress: [
@@ -87,12 +114,28 @@ async function main() {
         lastName: "Isolation",
       });
       users.push(user.id);
-      const session = await clerk.sessions.createSession({ userId: user.id }),
-        token = await clerk.sessions.getToken(session.id);
-      const actor = { user: user.id, session: session.id, token: token.jwt };
+      const context = await browser.newContext(),
+        page = await context.newPage();
+      await page.goto(base);
+      await browserClerk.signIn({
+        page,
+        emailAddress: user.emailAddresses[0].emailAddress,
+      });
+      const actor = {
+        user: user.id,
+        page,
+        session: await page.evaluate(() => window.Clerk.session.id),
+      };
       actors.push(actor);
       const provisioned = await call(actor, "/webhook/create-api-key", {});
-      assert.equal(provisioned.status, 200);
+      assert.equal(
+        provisioned.status,
+        200,
+        "Provisioning returned HTTP " +
+          provisioned.status +
+          " code " +
+          (provisioned.data?.code || "none"),
+      );
       assert(provisioned.data.apiKey);
       pass("real development session provisions its own key");
       const key = (
@@ -159,6 +202,71 @@ async function main() {
       ).data.alerts.some((a) => a.id === String(actors[1].alertId)),
     );
     pass("owner review persists across authenticated reload");
+    const destination = "https://example.org/axon-synthetic-callback";
+    const registration = await call(actors[0], "/webhook/callbacks", {
+      action: "register",
+      url: destination,
+    });
+    assert.equal(registration.status, 200);
+    assert.equal(
+      (await call(actors[1], "/webhook/callbacks")).data.destinations.length,
+      0,
+    );
+    assert.equal(
+      (
+        await call(actors[1], "/webhook/callbacks", {
+          action: "delete",
+          url: destination,
+          user_id: actors[0].user,
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await call(actors[1], "/webhook/callbacks", {
+          action: "verify",
+          url: destination,
+          challenge: registration.data.challenge,
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      (await call(actors[0], "/webhook/callbacks")).data.destinations.length,
+      1,
+    );
+    pass(
+      "callback reads, deletion and verification stay bound to the real authenticated owner; no endpoint contacted",
+    );
+    const all = await call(actors[1], "/webhook/alerts?filter=All"),
+      reviewed = await call(actors[1], "/webhook/alerts?filter=Reviewed"),
+      unreviewed = await call(actors[1], "/webhook/alerts?filter=Unreviewed");
+    assert.equal(all.data.pagination.totalCount, 1);
+    assert.equal(reviewed.data.pagination.totalCount, 1);
+    assert.equal(unreviewed.data.pagination.totalCount, 0);
+    pass("all three review filters agree after a real authenticated reload");
+    const existing = (
+      await db.query(
+        "SELECT subscription_id FROM axon_security.checkout_operations WHERE state='ready' AND subscription_id IS NOT NULL LIMIT 1",
+      )
+    ).rows[0];
+    if (existing && settings.RAZORPAY_KEY_ID?.startsWith("rzp_test_")) {
+      for (const a of actors)
+        assert.equal(
+          (
+            await call(
+              a,
+              "/webhook/subscription?subscriptionId=" +
+                encodeURIComponent(existing.subscription_id),
+            )
+          ).status,
+          403,
+        );
+      pass(
+        "two development identities cannot inspect an existing subscription owned by another account",
+      );
+    }
     fs.writeFileSync(
       path.join(local, "session-isolation-result.json"),
       JSON.stringify(
@@ -175,9 +283,11 @@ async function main() {
       ) + "\n",
     );
   } finally {
+    if (browser) await browser.close();
     for (const actor of actors)
       await clerk.sessions.revokeSession(actor.session).catch(() => {});
     for (const table of [
+      "axon_security.callback_destinations",
       "axon_security.alert_reviews",
       "public.validation_logs",
       "public.axon_quota_reservation",
@@ -198,6 +308,7 @@ main().catch((e) => {
     "Staging session test stopped:",
     e.code || e.name,
     e.status || "",
+    e.code === "ERR_ASSERTION" ? e.message : "",
   );
   process.exitCode = 1;
 });

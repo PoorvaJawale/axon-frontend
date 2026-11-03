@@ -8,7 +8,9 @@ test("operator deletion is dry-run first, drains work, and retries partial ident
   const db = new PGlite();
   const id = "123e4567-e89b-12d3-a456-426614174000";
   let deleted = false,
-    identityFailure = true;
+    identityFailure = true,
+    ledgerFailure = false,
+    ledgerWrites = 0;
   await db.exec(
     "CREATE TABLE api_keys(id bigserial PRIMARY KEY,user_id text,is_active boolean,updated_at timestamptz);CREATE TABLE axon_account_quota(user_id text PRIMARY KEY,plan text,period_end timestamptz);CREATE TABLE axon_quota_reservation(user_id text);CREATE TABLE validation_logs(user_id text);",
   );
@@ -65,26 +67,34 @@ test("operator deletion is dry-run first, drains work, and retries partial ident
         },
         console: { log: (s) => lines.push(s), error: (s) => lines.push(s) },
         require: (n) =>
-          n === "pg"
+          n.endsWith("privacy-ledger.cjs")
             ? {
-                Pool: class {
-                  async connect() {
-                    return { query: (s, v) => db.query(s, v), release() {} };
-                  }
-                  async end() {}
+                writeOperatorTombstone: async () => {
+                  if (ledgerFailure) throw Error("Recovery ledger unavailable");
+                  ledgerWrites++;
                 },
               }
-            : {
-                createClerkClient: () => ({
-                  users: {
-                    getUser: async () => ({ privateMetadata: {} }),
-                    deleteUser: async () => {
-                      if (identityFailure) throw Error("Provider unavailable");
-                      deleted = true;
-                    },
+            : n === "pg"
+              ? {
+                  Pool: class {
+                    async connect() {
+                      return { query: (s, v) => db.query(s, v), release() {} };
+                    }
+                    async end() {}
                   },
-                }),
-              },
+                }
+              : {
+                  createClerkClient: () => ({
+                    users: {
+                      getUser: async () => ({ privateMetadata: {} }),
+                      deleteUser: async () => {
+                        if (identityFailure)
+                          throw Error("Provider unavailable");
+                        deleted = true;
+                      },
+                    },
+                  }),
+                },
       },
     );
     return { lines, state };
@@ -121,6 +131,17 @@ test("operator deletion is dry-run first, drains work, and retries partial ident
     assert.equal((await run(true)).state.exitCode, 1);
     assert.equal(deleted, false);
     await db.exec("DELETE FROM axon_security.validation_inflight");
+    ledgerFailure = true;
+    assert.equal((await run(true)).state.exitCode, 1);
+    assert.equal(
+      (
+        await db.query(
+          "SELECT count(*)::int AS n FROM api_keys WHERE user_id='a'",
+        )
+      ).rows[0].n,
+      1,
+    );
+    ledgerFailure = false;
     const interrupted = await run(true);
     assert.equal(interrupted.state.exitCode, 1);
     assert.equal(
@@ -140,6 +161,7 @@ test("operator deletion is dry-run first, drains work, and retries partial ident
     const completed = await run(true);
     assert.equal(completed.state.exitCode, undefined);
     assert.equal(deleted, true);
+    assert.ok(ledgerWrites >= 1);
     assert.equal(
       (await db.query("SELECT state FROM axon_security.privacy_requests"))
         .rows[0].state,

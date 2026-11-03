@@ -32,10 +32,18 @@ export default function AlertsPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
-  const query = useSWR(`/webhook/alerts?filter=${filter}`, dashboardFetcher, {
-    refreshInterval: 15000,
-  });
+  const query = useSWR(
+    `/webhook/alerts?filter=${filter}&page=${page}&limit=${pageSize}`,
+    dashboardFetcher,
+    {
+      refreshInterval: 15000,
+    },
+  );
   const alerts: Alert[] = query.data?.alerts ?? [];
+  const pagination = query.data?.pagination;
+  const currentPage = pagination?.currentPage ?? page;
+  const pages = Math.max(1, pagination?.totalPages ?? 1);
+  const totalCount = pagination?.totalCount ?? 0;
   const tone = (severity: string) =>
     severity === "HIGH"
       ? ("red" as const)
@@ -59,7 +67,7 @@ export default function AlertsPage() {
       );
       if (saved && saved.reviewed === alert.reviewed)
         setActionError(
-          "Review tracking is not connected yet. This alert remains unreviewed; the original block is unchanged.",
+          "The saved review status could not be confirmed. Refresh this view and try again.",
         );
     } catch {
       setActionError(
@@ -105,7 +113,7 @@ export default function AlertsPage() {
             <span key={severity}>
               <strong className={`dash-${tone(severity)}`}>
                 {query.data && !query.error
-                  ? alerts.filter((a) => a.severity === severity).length
+                  ? (query.data.counts?.[severity] ?? 0)
                   : "—"}
               </strong>
               {severity === "HIGH"
@@ -140,7 +148,7 @@ export default function AlertsPage() {
             </h2>
           </div>
           <span className="dash-muted dash-mono dash-small">
-            {query.data && !query.error ? alerts.length : "—"} in view
+            {query.data && !query.error ? totalCount : "—"} in view
           </span>
         </div>
         <div
@@ -166,150 +174,128 @@ export default function AlertsPage() {
               }
             />
           ) : (
-            alerts
-              .slice(
-                (Math.min(
-                  page,
-                  Math.max(1, Math.ceil(alerts.length / pageSize)),
-                ) -
-                  1) *
-                  pageSize,
-                Math.min(
-                  page,
-                  Math.max(1, Math.ceil(alerts.length / pageSize)),
-                ) * pageSize,
-              )
-              .map((alert) => {
-                const isOpen = expanded === alert.id;
-                return (
-                  <article className="dash-alert-item" key={alert.id}>
-                    <div className="dash-alert-summary">
-                      <Status tone={tone(alert.severity)}>
-                        {alert.severity}
-                      </Status>
-                      <div>
-                        <button
-                          className="dash-detail-toggle"
-                          onClick={() => setExpanded(isOpen ? "" : alert.id)}
-                          aria-expanded={isOpen}
-                          aria-controls={`alert-${alert.id}`}
-                        >
-                          <ChevronRight size={16} />
-                          <span>
-                            <span className="dash-alert-title">
-                              {alert.title}
-                            </span>
-                            <span className="dash-alert-meta">
-                              <span className="dash-mono">{alert.agentId}</span>{" "}
-                              · {alert.actionType.replaceAll("_", " ")} ·{" "}
-                              {alert.timestamp}
-                            </span>
-                          </span>
-                        </button>
-                      </div>
+            alerts.map((alert) => {
+              const isOpen = expanded === alert.id;
+              return (
+                <article className="dash-alert-item" key={alert.id}>
+                  <div className="dash-alert-summary">
+                    <Status tone={tone(alert.severity)}>
+                      {alert.severity}
+                    </Status>
+                    <div>
                       <button
-                        className="dash-button dash-button-quiet"
-                        aria-label={
-                          pending === alert.id
-                            ? "Updating alert"
-                            : alert.reviewed
-                              ? "Mark unreviewed"
-                              : "Mark reviewed"
-                        }
-                        title={
-                          alert.reviewed ? "Mark unreviewed" : "Mark reviewed"
-                        }
-                        disabled={!!pending}
-                        onClick={() => void review(alert)}
+                        className="dash-detail-toggle"
+                        onClick={() => setExpanded(isOpen ? "" : alert.id)}
+                        aria-expanded={isOpen}
+                        aria-controls={`alert-${alert.id}`}
                       >
-                        {alert.reviewed ? (
-                          <RotateCcw size={14} />
-                        ) : (
-                          <Check size={14} />
-                        )}
-                        <span className="dash-review-label">
-                          {pending === alert.id
-                            ? "Updating…"
-                            : alert.reviewed
-                              ? "Mark unreviewed"
-                              : "Mark reviewed"}
+                        <ChevronRight size={16} />
+                        <span>
+                          <span className="dash-alert-title">
+                            {alert.title}
+                          </span>
+                          <span className="dash-alert-meta">
+                            <span className="dash-mono">{alert.agentId}</span> ·{" "}
+                            {alert.actionType.replaceAll("_", " ")} ·{" "}
+                            {alert.timestamp}
+                          </span>
                         </span>
                       </button>
                     </div>
-                    {isOpen && (
-                      <div
-                        className="dash-alert-detail"
-                        id={`alert-${alert.id}`}
-                      >
-                        <div>
-                          <p>{alert.description}</p>
-                          <div className="dash-section-heading">
-                            <h2 className="dash-detail-label">
-                              Blocked output
-                            </h2>
-                            <CopyButton text={alert.blockedOutput} />
-                          </div>
-                          <pre
-                            className="dash-code"
-                            style={{ marginTop: 12, color: "#ffaaa4" }}
-                          >
-                            {alert.blockedOutput || "No output recorded."}
-                          </pre>
+                    <button
+                      className="dash-button dash-button-quiet"
+                      aria-label={
+                        pending === alert.id
+                          ? "Updating alert"
+                          : alert.reviewed
+                            ? "Mark unreviewed"
+                            : "Mark reviewed"
+                      }
+                      title={
+                        alert.reviewed ? "Mark unreviewed" : "Mark reviewed"
+                      }
+                      disabled={!!pending}
+                      onClick={() => void review(alert)}
+                    >
+                      {alert.reviewed ? (
+                        <RotateCcw size={14} />
+                      ) : (
+                        <Check size={14} />
+                      )}
+                      <span className="dash-review-label">
+                        {pending === alert.id
+                          ? "Updating…"
+                          : alert.reviewed
+                            ? "Mark unreviewed"
+                            : "Mark reviewed"}
+                      </span>
+                    </button>
+                  </div>
+                  {isOpen && (
+                    <div className="dash-alert-detail" id={`alert-${alert.id}`}>
+                      <div>
+                        <p>{alert.description}</p>
+                        <div className="dash-section-heading">
+                          <h2 className="dash-detail-label">Blocked output</h2>
+                          <CopyButton text={alert.blockedOutput} />
                         </div>
-                        <dl className="dash-definition">
-                          <div>
-                            <dt>Severity</dt>
-                            <dd className={`dash-${tone(alert.severity)}`}>
-                              {alert.severity}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt>Action</dt>
-                            <dd>{alert.actionType.replaceAll("_", " ")}</dd>
-                          </div>
-                          <div>
-                            <dt>Decision</dt>
-                            <dd className="dash-red">Blocked</dd>
-                          </div>
-                          <div>
-                            <dt>Review status</dt>
-                            <dd>
-                              {alert.reviewed ? "Reviewed" : "Unreviewed"}
-                            </dd>
-                          </div>
-                        </dl>
+                        <pre
+                          className="dash-code"
+                          style={{ marginTop: 12, color: "#ffaaa4" }}
+                        >
+                          {alert.blockedOutput || "No output recorded."}
+                        </pre>
                       </div>
-                    )}
-                  </article>
-                );
-              })
+                      <dl className="dash-definition">
+                        <div>
+                          <dt>Severity</dt>
+                          <dd className={`dash-${tone(alert.severity)}`}>
+                            {alert.severity}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>Action</dt>
+                          <dd>{alert.actionType.replaceAll("_", " ")}</dd>
+                        </div>
+                        <div>
+                          <dt>Decision</dt>
+                          <dd className="dash-red">Blocked</dd>
+                        </div>
+                        <div>
+                          <dt>Review status</dt>
+                          <dd>{alert.reviewed ? "Reviewed" : "Unreviewed"}</dd>
+                        </div>
+                      </dl>
+                    </div>
+                  )}
+                </article>
+              );
+            })
           )}
         </div>
         <div className="dash-pagination">
-          <span>{query.data && !query.error ? alerts.length : "—"} alerts</span>
+          <span>{query.data && !query.error ? totalCount : "—"} alerts</span>
           <div className="dash-actions">
             <button
               className="dash-icon-button"
               aria-label="Previous alerts"
-              disabled={page <= 1}
+              disabled={currentPage <= 1}
               onClick={() => {
-                setPage((p) => Math.max(1, p - 1));
+                setPage(Math.max(1, currentPage - 1));
                 setExpanded(null);
               }}
             >
               <ChevronLeft size={15} />
             </button>
             <span>
-              Page{" "}
-              {Math.min(page, Math.max(1, Math.ceil(alerts.length / pageSize)))}{" "}
-              of {Math.max(1, Math.ceil(alerts.length / pageSize))}
+              Page {currentPage} of {pages}
             </span>
             <button
               className="dash-icon-button"
               aria-label="Next alerts"
-              disabled={page >= Math.ceil(alerts.length / pageSize)}
+              disabled={currentPage >= pages}
               onClick={() => {
-                setPage((p) => p + 1);
+                setPage(currentPage + 1);
                 setExpanded(null);
               }}
             >

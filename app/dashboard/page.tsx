@@ -44,7 +44,7 @@ export default function DashboardPage() {
     refreshInterval: 10000,
   });
   const alertsQuery = useSWR(
-    "/webhook/alerts?filter=Unreviewed",
+    "/webhook/alerts?filter=Unreviewed&limit=1",
     dashboardFetcher,
     { refreshInterval: 10000 },
   );
