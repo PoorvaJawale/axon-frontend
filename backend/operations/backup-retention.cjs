@@ -39,4 +39,3 @@ function planRetention(entries, now = Date.now()) {
   };
 }
 module.exports = { planRetention };
-

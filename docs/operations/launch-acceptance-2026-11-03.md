@@ -55,3 +55,15 @@ Policies identify Poorva Kiran Jawale as the individual operator in India with a
 ## Deployment/evidence
 
 The two existing live model-node expressions are updated only through `scripts/production-judge-instructions.cjs`, with recent native evidence, a fresh authenticated metadata backup, on-server workflow rollback exports, guarded native import/publication and a same-image n8n restart. Exact final deployment and CI evidence is appended after verification. Credentials, graphs, keys, quota counters and payment settings are unchanged by that prompt-only operation.
+
+### Verified continuation completion
+
+On 3 November, the owner-approved source-backup rotation ran with zero deletion candidates. The existing daily 04:00 IST local automation now runs guarded rotation only after all three new authenticated backups succeed. Original offline app/metadata restore receipts were reconciled with their encrypted-source metadata so the actual last verified recovery points remain protected.
+
+The exact classifier and dataset hashes were attached to refreshed 32/32 and 12/12 native evaluation reports. All 87 source regression tests passed, as did lint, TypeScript and all 13 generated-workflow checks. The Privacy page passed desktop/mobile rendering checks and the scoped design detector.
+
+The two existing production model expressions were published after a fresh encrypted metadata backup and on-server workflow rollback export. The first restart invocation timed out; the explicit noninteractive JSON restart succeeded without rebuilding the pinned image. Read-only native exports verified both workflows active and both expression fingerprints matching the tested candidate. After restart, public website/backend/database checks were operational and the actual validate endpoint rejected an empty schema with HTTP 400. No validation/model call, payment, credential replacement or quota reset was used for this post-restart probe.
+
+PR #5 contains the source/tooling/privacy changes: https://github.com/PoorvaJawale/axon-frontend/pull/5. Its first full cloud CI and Vercel checks passed; the final evidence/CLI-format update is checked again on its exact head before merge. Live frontend deployment confirmation is recorded in the final handoff after merge rather than assuming a preview changes the canonical domain.
+
+Still external: the approved Drive account is full, so no offsite upload has succeeded; separate recovery-key custody needs an owner-chosen destination. Account-specific provider settings and independent policy review cannot be established from API source. Future real billing-cycle and representative beta observations remain ongoing, with automated lifecycle coverage and an operator procedure already in place.

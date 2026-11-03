@@ -186,6 +186,7 @@ function main() {
     "--service",
     service,
     "--yes",
+    "--json",
   ]);
   fs.writeFileSync(
     path.join(dir, "judge-instructions-release.json"),

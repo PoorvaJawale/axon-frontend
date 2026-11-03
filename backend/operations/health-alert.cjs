@@ -19,4 +19,3 @@ function decide(previous, states) {
   };
 }
 module.exports = { decide };
-
