@@ -519,14 +519,12 @@ test("unconfigured checkout returns a clear 503 without provider calls or checko
     usageResponse: { plan: "free" },
     env: { RAZORPAY_KEY_ID: "", RAZORPAY_KEY_SECRET: "", RAZORPAY_PLAN_ID: "" },
   });
-  const r = await f
-    .load("app/webhook/razorpay-subscribe/route.ts")
-    .POST(
-      new Request("https://axon.example/webhook/razorpay-subscribe", {
-        method: "POST",
-        headers: { origin: "https://axon.example" },
-      }),
-    );
+  const r = await f.load("app/webhook/razorpay-subscribe/route.ts").POST(
+    new Request("https://axon.example/webhook/razorpay-subscribe", {
+      method: "POST",
+      headers: { origin: "https://axon.example" },
+    }),
+  );
   assert.equal(r.status, 503);
   assert.equal(r.body.code, "PAYMENTS_UNAVAILABLE");
   assert.match(r.body.error, /No payment has been taken/);
@@ -562,4 +560,49 @@ test("existing subscription history fails visibly when provider credentials are 
   assert.equal(r.status, 503);
   assert.equal(r.body.code, "PAYMENTS_UNAVAILABLE");
   assert.equal(f.calls.filter((c) => c.type === "fetch").length, 0);
+});
+
+for (const status of ["cancelled", "halted", "expired", "completed"]) {
+  test(
+    "canonical " +
+      status +
+      " state downgrades only the matching subscription at cycle end",
+    async () => {
+      const f = fixture({
+        metadata: { razorpaySubscriptionId: "sub_fixture" },
+        subscription: {
+          status,
+          current_end: Math.floor(Date.now() / 1000) - 60,
+        },
+      });
+      const r = await webhook(
+        f,
+        "subscription." + (status === "halted" ? "halted" : status),
+      );
+      assert.equal(r.status, 200);
+      const billing = f.calls.filter((c) => c.type === "billing");
+      assert.equal(billing.length, 1);
+      assert.equal(billing[0].body.plan, "free");
+      assert.equal(billing[0].body.request_limit, 100);
+    },
+  );
+}
+test("an active provider state with expired paid dates does not grant a new paid period", async () => {
+  const f = fixture({
+    subscription: { current_end: Math.floor(Date.now() / 1000) - 60 },
+  });
+  const r = await webhook(f, "subscription.charged");
+  assert.equal(r.status, 500);
+  assert(!f.calls.some((c) => c.type === "billing"));
+});
+test("refund events cannot invent a new paid allowance or silently cancel a subscription", async () => {
+  const f = fixture();
+  const r = await webhook(f, "refund.processed");
+  assert.equal(r.status, 200);
+  assert(!f.calls.some((c) => c.type === "billing"));
+  assert(
+    !f.calls.some(
+      (c) => c.method === "POST" && c.url?.includes("api.razorpay.com"),
+    ),
+  );
 });

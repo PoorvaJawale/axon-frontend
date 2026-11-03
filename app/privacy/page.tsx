@@ -8,7 +8,7 @@ export default function Policy() {
       description="What Axon processes and how to contact us about your data."
     >
       <div className="ap-policy">
-        <p>Updated 31 October 2026.</p>
+        <p>Updated 3 November 2026.</p>
         <section>
           <h2>Data processed</h2>
           <p>
@@ -32,14 +32,26 @@ export default function Policy() {
           </p>
         </section>
         <section>
+          <h2>Model-provider retention</h2>
+          <p>
+            We disable optional storage of model responses. OpenAI may still
+            retain content under its abuse-monitoring rules and applicable
+            account settings. This does not provide zero data retention. See{" "}
+            <a href="https://developers.openai.com/api/docs/guides/your-data">
+              OpenAI’s data controls
+            </a>{" "}
+            for the provider’s current terms and exceptions.
+          </p>
+        </section>
+        <section>
           <h2>Retention and access</h2>
           <p>
-            Validation history is retained according to the configured account
-            policy. New validation logs record decision metadata rather than
-            full output content. Temporary jobs, n8n execution settings and
-            backups also affect retention; contact support for the configuration
-            applicable to your deployment. Staff access should be limited to
-            operating and supporting the service.
+            Standard Free validation history is retained for 7 days and Pro
+            history for 30 days. New validation logs record decision metadata
+            rather than full output content. Temporary jobs, n8n execution
+            settings and backups also affect retention; contact support for the
+            configuration applicable to your deployment. Staff access should be
+            limited to operating and supporting the service.
           </p>
         </section>
         <section>
