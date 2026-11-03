@@ -103,6 +103,10 @@ async function main() {
         [u.id, marker],
       );
     }
+    await db.query(
+      "INSERT INTO public.validation_logs(user_id,agent_id,action_type,final_verdict,risk_level,reason,timestamp) SELECT $1,'synthetic-alert-'||n,'api_call','BLOCK',CASE WHEN n%3=0 THEN 'HIGH' WHEN n%3=1 THEN 'MEDIUM' ELSE 'LOW' END,'Synthetic pagination acceptance only',now()-n*interval '1 second' FROM generate_series(1,330) n",
+      [actors[1].id],
+    );
     stage = "clerk-testing-setup";
     await clerkSetup({
       dotenv: false,
@@ -142,6 +146,67 @@ async function main() {
         "Other account marker visible",
       );
       pass("browser account " + n + " renders only its own logs");
+      if (n === 1) {
+        stage = "browser-alert-pagination";
+        await page.goto("http://localhost:3101/dashboard/alerts");
+        await page.getByText("331 in view", { exact: true }).waitFor();
+        await page
+          .getByRole("button", { name: "Next alerts", exact: true })
+          .click();
+        await page.getByText(/Page 2 of/).waitFor();
+        await page
+          .getByRole("button", { name: "Previous alerts", exact: true })
+          .click();
+        await page.getByText(/Page 1 of/).waitFor();
+        await page
+          .getByRole("button", { name: "Mark reviewed", exact: true })
+          .first()
+          .click();
+        await page.getByText("330 in view", { exact: true }).waitFor();
+        await page
+          .getByRole("button", { name: "Reviewed", exact: true })
+          .click();
+        await page.getByText("1 in view", { exact: true }).waitFor();
+        await page.reload();
+        await page
+          .getByRole("button", { name: "Reviewed", exact: true })
+          .click();
+        await page.getByText("1 in view", { exact: true }).waitFor();
+        await page
+          .getByRole("button", { name: "All alerts", exact: true })
+          .click();
+        await page.getByText("331 in view", { exact: true }).waitFor();
+        await page.screenshot({
+          path: path.join(local, "alerts-desktop.png"),
+          fullPage: true,
+        });
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.waitForResponse(
+          (r) =>
+            r.url().includes("/webhook/alerts?") &&
+            r.url().includes("limit=2") &&
+            r.status() === 200,
+        );
+        await page
+          .getByRole("button", { name: "Mark reviewed", exact: true })
+          .first()
+          .waitFor({ state: "visible" });
+        await page.getByText("331 in view", { exact: true }).waitFor();
+        assert.equal(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth > innerWidth,
+          ),
+          false,
+        );
+        await page.screenshot({
+          path: path.join(local, "alerts-mobile.png"),
+          fullPage: true,
+        });
+        await page.setViewportSize({ width: 1440, height: 950 });
+        pass(
+          "331 alerts paginate, reviewed state survives reload, exact totals and mobile layout hold",
+        );
+      }
       // Check every painted frame after ownership has resolved for lingering prior-account content.
       const leaked = await page.evaluate(
         async ({ other }) => {

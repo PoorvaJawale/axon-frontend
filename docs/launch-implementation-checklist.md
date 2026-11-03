@@ -1,14 +1,15 @@
 # Axon launch implementation checklist
 
-Current continuation: [3 November acceptance and operations](operations/launch-acceptance-2026-11-03.md). Real browser isolation, expanded native model evaluation, billing regressions, stateful alerts and approved guarded backup rotation now have additional evidence there. Offsite storage and external account/policy review remain distinct.
+Current reconciliation: [3 November closure evidence and remaining gates](operations/launch-closure-2026-11-03.md). Production identity/domain, offsite recovery, provider account controls, policy review and representative beta observations remain open.
 
+Earlier continuation: [3 November acceptance and operations](operations/launch-acceptance-2026-11-03.md). Real browser isolation, expanded native model evaluation, billing regressions, stateful alerts and approved guarded backup rotation now have additional evidence there. Offsite storage and external account/policy review remain distinct.
 
 Implementation record (1 November 2026): checked items have implementation/test/deployment evidence in [production operations](operations/production-inspection-2026-11-01.md) and [the launch handoff](operations/launch-handoff-2026-10-31.md). Unchecked items retain an external, broader acceptance or future-growth requirement; passing source tests alone does not close them.
 
 Prepared: 19 October 2026. Intended start: 20 October 2026 (Asia/Kolkata).
 Source: [Launch-readiness review](launch-readiness-2026-10-19.md).
 
-This is the implementation backlog extracted from the report. Application code and workflow JSON have not been changed by preparing it. All implementation items start unchecked. Existing working controls should be preserved and regression-tested.
+This is the implementation backlog extracted from the report. It has been updated against implementation and acceptance evidence. Checked items record the tested scope; external requirements remain open. Existing working controls should be preserved and regression-tested.
 
 ## How we will work
 
@@ -24,13 +25,13 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Export the current validationproject, Background Semantic Validator, API Key Workflow, Billing Update, Usage API, Logs API, Alerts API, API Keys API, Revoke Key API, Monthly Usage Reset, Error Handler and Axon Health workflows.
 - [x] Capture schema definitions, quota/reservation functions, indexes, constraints and migration history without customer records or secret values.
-- [ ] Record actual Railway/n8n version, execution mode, worker/replica count, connection limits, retention and backup settings; Vercel/Clerk/Razorpay environment modes and relevant security settings.
+- [x] Record actual Railway/n8n version, execution mode, worker/replica count, connection limits, retention and backup settings; Vercel/Clerk/Razorpay environment modes and relevant security settings.
 
 **Complete when:** each report finding is labeled current defect, verified fixed, or configuration still unverified, with its current source/revision. Source: all findings.
 
 ### BASE-02: Prepare safe implementation and recovery
 
-- [ ] Create a staging/test setup with separate credentials, sandbox payment configuration and two test accounts.
+- [x] Create a staging/test setup with separate credentials, sandbox payment configuration and two test accounts.
 - [x] Take a verified backup before database changes; record the current deployment/workflow versions and rollback steps.
 - [x] Keep sanitized workflow exports and reviewed schema/migration changes in version control. Never commit raw credentials, customer data or execution dumps.
 
@@ -50,7 +51,7 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Recheck current advisories and choose maintained patched versions of Next.js/Nodemailer and affected transitive dependencies.
 - [x] Update compatible packages and lockfile using the relevant installed Next.js migration guidance; avoid a blind force-upgrade.
-- [ ] Run build, lint, existing tests and sign-in/payment/image/status regression checks.
+- [x] Run build, lint, existing tests and sign-in/payment/image/status regression checks.
 
 **Where:** package.json, package-lock.json, Next.js configuration as required.
 **Complete when:** launch-relevant critical/high advisories are remediated; any remaining finding has a documented exposure analysis and release decision. Source: F01.
@@ -71,7 +72,7 @@ This is the implementation backlog extracted from the report. Application code a
 - [x] Parse URLs correctly; reject credentials, unsafe schemes, private/reserved destinations and alternative numeric/IPv6 representations.
 - [x] Protect the actual DNS-resolved connection and egress path; do not rely on a one-time string or DNS check.
 - [x] Disable redirects or validate every redirected destination; enforce outbound timeout and response-size limits.
-- [ ] If the product becomes validate-only, remove automatic forwarding and update the contract instead of leaving hidden dispatch paths.
+- Not applicable: the owner chose both validate-only and verified forwarding. Both remain explicit modes with one execution owner per request.
 
 **Where:** validator input guard, every synchronous/background HTTP callback node, destination settings and network configuration.
 **Complete when:** staging tests cover alternative IP forms, private DNS results and unsafe redirects; unapproved destinations cannot be contacted. Source: F03.
@@ -102,7 +103,7 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Derive tenant/owner IDs only from authenticated sessions or verified API keys; enforce ownership on every resource query/mutation.
 - [x] User-scope dashboard SWR keys and clear auth/secret/cache state when identity changes.
-- [ ] Test cross-account reads, revocations, subscription access and callback changes using two staging users.
+- [x] Test cross-account reads, revocations, subscription access and callback changes using two staging users.
 
 **Where:** AuthContext, dashboard fetch hooks, server routes, backend SQL.
 **Complete when:** account B cannot see or alter account A's data and switching accounts does not display cached secrets/data. Source: F02, F09 and release criteria.
@@ -113,7 +114,8 @@ This is the implementation backlog extracted from the report. Application code a
 - [x] Request/body/field-size limits and model input/output-token caps before expensive processing.
 - [x] Bounded retries with backoff and defined global spend/failure safeguards.
 - [x] Limits on key creation and checkout attempts; validated/capped contact fields and bot/spam protection.
-- [ ] Verify Clerk signup/email controls and actual Free semantic-model access.
+- [x] Verified-email provisioning is enforced and negatively tested; actual Free native semantic checks pass.
+- [ ] Configure and verify production Clerk signup/email/bot settings after owned-domain setup; current instance is development.
 
 **Where:** public validation ingress, server mutation routes, SMTP contact endpoint, model nodes and deployment controls.
 **Complete when:** staging burst/oversized/spam/retry tests stay within resource and spend bounds without starving another tenant. Source: F06.
@@ -123,7 +125,7 @@ This is the implementation backlog extracted from the report. Application code a
 - [x] Add bounded timeouts to remaining backend/provider fetches; normalize errors and bound pagination/ID inputs.
 - [x] Explicitly prevent sensitive authenticated responses from being publicly cached.
 - [x] Verify actual cookie/Clerk CSRF protections; enforce expected origins for browser mutations without breaking signature-authenticated provider webhooks.
-- [ ] Add tested CSP, framing restrictions, nosniff, Referrer-Policy and Permissions-Policy while preserving Clerk/Razorpay/Next.js behavior.
+- [x] Add tested CSP, framing restrictions, nosniff, Referrer-Policy and Permissions-Policy while preserving Clerk/Razorpay/Next.js behavior.
 
 **Where:** next.config.ts, lib/axon.ts, server routes and middleware/configuration as appropriate.
 **Complete when:** auth and checkout still work, sensitive responses are not shared, invalid inputs fail predictably and security headers are verified on the deployed responses. Source: F12.
@@ -154,10 +156,12 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Persist processed event identities and make billing-period transitions idempotent.
 - [x] Handle duplicate/reordered events and partial PostgreSQL/Clerk failures with retryable reconciliation.
-- [ ] Verify cancellation at period end and define refund/dispute/legacy-subscription handling and support recovery.
-- [ ] Verify production Razorpay mode, webhook subscription/events and ₹799 monthly plan configuration without making unnecessary live payments.
+- [x] Verify cancellation at period end and define refund/dispute/legacy-subscription handling and support recovery.
+- [x] Verify production Razorpay mode, webhook subscription/events and ₹799 monthly plan configuration without making unnecessary live payments.
 
 **Where:** payment webhook/activation/cancellation routes, billing workflow and durable event/entitlement records.
+Cancellation evidence covers sandbox acknowledgment and automated terminal-period cases; future natural live transitions remain beta observation.
+
 **Complete when:** sandbox end-to-end tests cover paid-but-not-activated recovery, duplicate events, cancellation, mismatched ownership and interrupted synchronization without double charging or resetting usage. Source: F08.
 
 ## Workstream 4 — Privacy and accurate launch promises
@@ -167,8 +171,9 @@ This is the implementation backlog extracted from the report. Application code a
 - [x] Inventory user identity, keys, agent content, metadata, model data, n8n execution data, error logs, payment IDs and backups.
 - [x] Redact secrets/sensitive content before persistence and minimize content sent to the model.
 - [x] Implement tested retention/deletion jobs and an account export/deletion process; set deliberate n8n execution saving/pruning and staff-access rules.
-- [ ] Verify actual OpenAI endpoint/store options and account data controls against the privacy promise.
-- [ ] Define backup retention and how deletion requests interact with backups.
+- [x] Verify deployed endpoint/optional store:false configuration and remove any zero-retention promise.
+- [ ] Owner confirms account-specific provider sharing/retention controls; API settings alone do not establish those controls.
+- [x] Define backup retention and how deletion requests interact with backups.
 
 **Where:** log insert nodes, DB cleanup/deletion jobs, server data endpoints, provider settings and operations documentation.
 **Complete when:** the advertised retention period is actually enforced, deletion is verified, raw keys/content are not retained accidentally, and any zero-retention claim is supported end to end. Source: F07.
@@ -199,7 +204,7 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Store tenant-scoped review state, actor and time; implement the review mutation.
 - [x] Return success only after persistence and show the actual blocked output where supported.
-- [ ] Verify Reviewed/Unreviewed/All filters and reload behavior.
+- [x] Verify Reviewed/Unreviewed/All filters and reload behavior.
 
 **Where:** validation log/review schema, Alerts API, server alert routes and dashboard.
 **Complete when:** review survives reload and cannot update another tenant's alert; unavailable storage is an error rather than false success. Source: F10.
@@ -210,7 +215,7 @@ This is the implementation backlog extracted from the report. Application code a
 - [x] Ensure exactly one HTTP response path; return 202 for genuinely accepted background work.
 - [x] Define explicit job, validation and callback-delivery states rather than marking failed delivery completed.
 - [x] Add bounded retry/backoff, stuck-job recovery and an operator path for exhausted failures.
-- [ ] Verify the error workflow is attached and errors can be observed when the primary DB fails.
+- [x] Retire the legacy error workflow deliberately; independent health probes detect primary-DB failure and the stateful notification path exercises failure/recovery without depending on that DB.
 
 **Where:** async branch, async_validation_jobs schema, background workflow and error handling.
 **Complete when:** insertion failure never produces a false acceptance; accepted jobs survive interruption/retry; failed callbacks remain identifiable and recoverable without duplicate execution. Source: F11.
@@ -219,10 +224,12 @@ This is the implementation backlog extracted from the report. Application code a
 
 ### OPS-01: Verify database and secret controls
 
-- [ ] Review actual key/request/event uniqueness, foreign keys, quota constraints and user/time indexes; inspect representative query plans.
+- [x] Review actual key/request/event uniqueness, foreign keys, quota constraints and user/time indexes; inspect representative query plans.
 - [x] Verify least-privilege DB roles, TLS, pooling/connection limits and applicable tenant defense-in-depth controls.
-- [ ] Confirm staging/production secret separation, credential access/rotation and sanitized execution logs.
-- [ ] Review current Git history for exposed secrets; commit the existing local .clerk ignore protection deliberately after review.
+- [x] Confirm staging/production secret separation, credential access/rotation and sanitized execution logs.
+- [x] Review current Git history for exposed secrets; commit the existing local .clerk ignore protection deliberately after review.
+
+Evidence: [production inspection](operations/production-inspection-2026-11-01.md), [current acceptance](operations/launch-acceptance-2026-11-03.md), and [closure](operations/launch-closure-2026-11-03.md).
 
 **Complete when:** live configuration is documented and tested; no secret values are placed in the report/repository. Do not add indexes/RLS blindly without inspecting the current schema. Source: scalability section, F09, F12.
 
@@ -238,8 +245,9 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Fix the recorded lint error/warnings and add CI for meaningful lint, build, tests and dependency checks.
 - [x] Document environment setup, architecture, migration/deployment order and rollback in the README/runbooks.
-- [ ] Verify backup schedules, restore a backup into staging, and test migration rollback/recovery.
-- [ ] Provide operator error/incident alerts and practical recovery for backend/model/payment failures; verify alerting independently of the failing DB where feasible.
+- [x] Verify backup schedules, restore a backup into staging, and test migration rollback/recovery.
+- [ ] Complete an authenticated offsite backup and separate protected recovery-key custody after the approved storage quota issue is resolved.
+- [x] Provide operator error/incident alerts and practical recovery for backend/model/payment failures; verify alerting independently of the failing DB where feasible.
 
 **Complete when:** checks gate changes, a restore drill succeeds, and another operator can follow the runbook. Existing visitor-triggered health checks must not be advertised as continuous uptime monitoring. Source: F11, F12 and release criteria.
 
@@ -247,9 +255,11 @@ This is the implementation backlog extracted from the report. Application code a
 
 - [x] Create a labeled judge evaluation set with safe/unsafe examples, malformed responses and prompt-injection attempts; measure false passes and false blocks.
 - [x] Test action-specific structural/policy behavior actually promised to customers and document the limits of ungrounded semantic judgments.
-- [ ] Run staging burst/soak tests with representative payloads, token sizes, callbacks and retries.
-- [ ] Record throughput, p50/p95/p99 latency, failure rates, active jobs/queue age, DB connections, model usage and cost.
-- [ ] Set launch limits, concurrency, timeouts, alerts and a capacity/cost budget from results.
+- [x] Run staging burst/soak tests with representative payloads, token sizes, callbacks and retries.
+- [x] Record bounded local mock-soak throughput/latency/quota behavior and native synthetic judge results with their limits.
+- [ ] Collect representative cloud beta queue/connection/provider-token/cost and latency/error observations.
+- [x] Set explicit request/token/concurrency/admission limits, timeouts and stateful alerts.
+- [ ] Owner verifies provider monetary spend/recharge settings and reviews a budget against measured beta usage.
 
 **Complete when:** the supported launch workload and failure behavior have measured evidence; no customer-count, accuracy or SLA promise is based only on monthly quota arithmetic. Source: scalability section and release criteria.
 
@@ -264,7 +274,7 @@ These are conditional expansion tasks, not instructions to buy or deploy more in
 
 **Complete when:** demand and contract requirements justify each addition and it has been tested. No Kubernetes, multi-region system or paid monitoring product is a prerequisite for fixing the existing MVP launch gates.
 
-## First session: 20 October 2026
+## Original first-session plan: 20 October 2026 (historical)
 
 Recommended order, not a promise that every task will fit in one day:
 
@@ -281,32 +291,34 @@ Inputs needed from the live environment: current workflow exports; schema/quota-
 Do not mark launch-ready merely because tasks are implemented. Record evidence for each requirement:
 
 - [ ] All critical/high launch findings fixed or verified absent, with current deployed revisions and any justified release exceptions documented.
-- [ ] Two-account isolation and session-switching tests pass.
+- [x] Two-account isolation and session-switching tests pass.
 - [x] Model output cannot alter identity, destination or signing context; malformed/model-error paths fail safely.
-- [ ] Callback tampering/replay, duplicate execution and unsafe destinations are prevented under the chosen contract.
+- [x] Callback tampering/replay, duplicate execution and unsafe destinations are prevented under the chosen contract.
 - [x] Concurrent usage and payment retries cannot exceed quota, double-create a subscription or refill the same paid period.
-- [ ] Retention/deletion behavior matches policies and advertised features.
-- [ ] Real logs/review/statistics work; examples, plans and public claims match deployment.
-- [ ] Build/lint/tests, sandbox payment flows, staging load/quality tests and backup restoration pass.
-- [ ] Operator alerting, rollback, payment reconciliation and support recovery are documented and exercised.
+- [x] Standard log retention, deletion guards and backup-source rotation are implemented/tested; recovery-ledger gate and held-copy exceptions are documented.
+- [ ] Verify external provider retention and held/offsite-copy custody before wider release.
+- [x] Real logs/review/statistics, examples and plan contracts have acceptance coverage.
+- [ ] Deploy this follow-up pagination/auth/recovery release and verify the canonical site; complete external policy review.
+- [x] Build/lint/tests, sandbox payment flows, staging load/quality tests and backup restoration pass.
+- [x] Operator alerting, rollback, payment reconciliation and support recovery are documented and exercised.
 - [ ] Controlled beta observations support the intended wider launch limits.
 
 Finishing these tasks supports an evidence-based launch decision. It cannot guarantee perfect security, a permanent 10/10 score or enterprise compliance. Reassess the deployed system and residual risks at the end.
 
 ## Traceability to the report
 
-| Finding | Checklist items |
-| --- | --- |
-| F01 Dependencies | SEC-01 |
-| F02 Trusted judge context | SEC-02, AUTH-02 |
-| F03 Callback destination protection | SEC-03 |
-| F04 Execution/callback contract | BASE-03, SEC-04, DATA-01 |
-| F05 Quotas | QUOTA-01, BASE-01/02 |
-| F06 Abuse/spend | API-01 |
-| F07 Privacy | PRIV-01, PRIV-02 |
-| F08 Payment concurrency/reconciliation | BILL-01, BILL-02 |
-| F09 Keys/dashboard identity | AUTH-01, AUTH-02, OPS-01 |
-| F10 Logs/alerts | DATA-01, DATA-02 |
-| F11 Durable background work | JOB-01, OPS-03 |
-| F12 Hardening/engineering/claims | API-02, PRIV-02, OPS-02, OPS-03 |
-| Scalability and release criteria | OPS-01, OPS-04, final launch gate and conditional growth tasks |
+| Finding                                | Checklist items                                                |
+| -------------------------------------- | -------------------------------------------------------------- |
+| F01 Dependencies                       | SEC-01                                                         |
+| F02 Trusted judge context              | SEC-02, AUTH-02                                                |
+| F03 Callback destination protection    | SEC-03                                                         |
+| F04 Execution/callback contract        | BASE-03, SEC-04, DATA-01                                       |
+| F05 Quotas                             | QUOTA-01, BASE-01/02                                           |
+| F06 Abuse/spend                        | API-01                                                         |
+| F07 Privacy                            | PRIV-01, PRIV-02                                               |
+| F08 Payment concurrency/reconciliation | BILL-01, BILL-02                                               |
+| F09 Keys/dashboard identity            | AUTH-01, AUTH-02, OPS-01                                       |
+| F10 Logs/alerts                        | DATA-01, DATA-02                                               |
+| F11 Durable background work            | JOB-01, OPS-03                                                 |
+| F12 Hardening/engineering/claims       | API-02, PRIV-02, OPS-02, OPS-03                                |
+| Scalability and release criteria       | OPS-01, OPS-04, final launch gate and conditional growth tasks |

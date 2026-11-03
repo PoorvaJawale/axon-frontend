@@ -11,6 +11,53 @@ const required = [
   "RAZORPAY_WEBHOOK_SECRET",
 ];
 let failures = 0;
+const publicLaunch = process.argv.includes("--public-launch");
+const publishableMode = /^pk_(test|live)_/.exec(
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "",
+)?.[1];
+const secretMode = /^sk_(test|live)_/.exec(
+  process.env.CLERK_SECRET_KEY || "",
+)?.[1];
+if (publishableMode && secretMode && publishableMode !== secretMode) {
+  console.error("Clerk public/server key modes must match.");
+  failures++;
+}
+if (publicLaunch) {
+  if (publishableMode !== "live" || secretMode !== "live") {
+    console.error(
+      "Public launch requires paired Clerk production keys after verified identity migration.",
+    );
+    failures++;
+  }
+  try {
+    const u = new URL(process.env.AXON_PUBLIC_SITE_URL);
+    if (
+      u.protocol !== "https:" ||
+      u.username ||
+      u.password ||
+      u.pathname !== "/" ||
+      u.search ||
+      u.hash ||
+      u.hostname.endsWith(".vercel.app") ||
+      ["localhost", "127.0.0.1"].includes(u.hostname)
+    )
+      throw Error();
+  } catch {
+    console.error(
+      "Public launch requires the configured owned HTTPS domain and completed DNS/identity setup.",
+    );
+    failures++;
+  }
+  if (!process.env.RAZORPAY_KEY_ID?.startsWith("rzp_live_")) {
+    console.error(
+      "Public paid launch requires the reviewed live payment configuration.",
+    );
+    failures++;
+  }
+} else if (publishableMode === "test")
+  console.log(
+    "INFO Clerk development instance; public production identity gate remains open.",
+  );
 for (const key of required) {
   const set = !!process.env[key];
   console.log((set ? "OK " : "MISSING ") + key);
@@ -49,6 +96,6 @@ if (!fs.existsSync("backend/workflows/manifest.json")) {
   failures++;
 }
 console.log(
-  "No secret values were printed. This check does not verify provider settings, backups or live behavior.",
+  "No secret values were printed. This check does not verify domain ownership, identity migration, provider settings, backups or live behavior.",
 );
 process.exitCode = failures ? 1 : 0;

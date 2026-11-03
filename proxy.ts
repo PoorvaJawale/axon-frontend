@@ -1,7 +1,9 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
+import { authorizedOrigins } from "@/lib/security/auth-origins";
 
 // Resource handlers and the dashboard server layout enforce authorization.
 export default clerkMiddleware({
+  authorizedParties: authorizedOrigins(),
   contentSecurityPolicy: {
     strict: true,
     directives: {

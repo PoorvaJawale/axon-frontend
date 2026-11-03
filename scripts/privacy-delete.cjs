@@ -1,5 +1,8 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- Explicit operator-only workflow. */
 // Dry-run by default. Never called by the website or scheduled automatically.
+const {
+  writeOperatorTombstone,
+} = require("../backend/operations/privacy-ledger.cjs");
 const { Pool } = require("pg");
 const { createClerkClient } = require("@clerk/backend");
 const flags = new Set(process.argv.slice(2));
@@ -174,6 +177,7 @@ async function main() {
     ).rows;
     if (active.length)
       throw Error("Validation work is still draining; retry later.");
+    await writeOperatorTombstone({ requestId, userId: r.user_id });
     for (const table of [
       "axon_security.validation_jobs",
       "axon_security.validation_inflight",

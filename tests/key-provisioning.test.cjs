@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const vm = require("node:vm");
 const ts = require("typescript");
-function fixture() {
+function fixture(verification = "verified") {
   const cache = {};
   let inserts = 0;
   const metadata = [];
@@ -65,7 +65,7 @@ function fixture() {
                   getUser: async () => ({
                     primaryEmailAddress: {
                       emailAddress: "owner@example.com",
-                      verification: { status: "verified" },
+                      verification: { status: verification },
                     },
                   }),
                   updateUserMetadata: async (id, data) =>
@@ -145,4 +145,20 @@ test("key setup still rejects non-JSON and malformed JSON bodies without creatin
   }
   assert.equal(f.inserts(), 0);
   assert.equal(f.metadata.length, 0);
+});
+
+test("an unverified primary email cannot provision a key or allowance", async () => {
+  const f = fixture("unverified");
+  const r = await f.post(
+    new Request("https://axon.example/webhook/create-api-key", {
+      method: "POST",
+      headers: {
+        origin: "https://axon.example",
+        "content-type": "application/json",
+      },
+      body: "{}",
+    }),
+  );
+  assert.equal(r.status, 403);
+  assert.equal(f.inserts(), 0);
 });

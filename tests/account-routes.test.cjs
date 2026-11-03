@@ -18,6 +18,10 @@ test("account endpoints isolate two tenants, survive absent API keys, and reject
   await db.exec(
     "INSERT INTO axon_account_quota VALUES('a','free',44,0,0,NULL,NULL),('b','pro',12,333,0,now()-interval '1 day',now()+interval '29 days');INSERT INTO api_keys(user_id,name,key_prefix,plan,is_active) VALUES('a','A','prefix-a','free',true),('b','B','prefix-b','pro',true);INSERT INTO validation_logs(user_id,agent_id,action_type,final_verdict,reason) VALUES('a','agent-a','email_send','BLOCK','A only'),('b','agent-b','payment','BLOCK','B only');",
   );
+  await db.exec(
+    "CREATE TABLE axon_security.callback_destinations(user_id text,url text,challenge_hash text,signing_secret text,verified_at timestamptz,created_at timestamptz DEFAULT now(),PRIMARY KEY(user_id,url))",
+  );
+  let proofRequests = 0;
   const database = {
     query: async (sql, values) => (await db.query(sql, values)).rows,
     transaction: async (run) => {
@@ -63,6 +67,16 @@ test("account endpoints isolate two tenants, survive absent API keys, and reject
         },
         require: (n) => {
           if (n === "server-only") return {};
+          if (n === "@/backend/n8n/policy.cjs")
+            return {
+              ...require("../backend/n8n/policy.cjs"),
+              pinnedPost: async (_url, bytes) => {
+                proofRequests++;
+                return JSON.stringify({
+                  challenge: JSON.parse(bytes).challenge,
+                });
+              },
+            };
           if (n === "@/lib/db") return database;
           if (n === "@clerk/nextjs/server")
             return { auth: async () => ({ userId }) };
@@ -155,6 +169,104 @@ test("account endpoints isolate two tenants, survive absent API keys, and reject
     assert.equal(
       (await get("alerts", "?filter=Reviewed")).body.alerts.length,
       0,
+    );
+    userId = "a";
+    await db.exec(
+      "INSERT INTO validation_logs(user_id,agent_id,action_type,final_verdict,reason,risk_level,timestamp) SELECT 'a','alert-bulk','email_send','BLOCK','Bulk alert',CASE WHEN g%3=0 THEN 'CRITICAL' WHEN g%3=1 THEN 'MEDIUM' ELSE 'LOW' END,now()-g*interval '1 second' FROM generate_series(1,330) g",
+    );
+    const bulk = await get("alerts", "?filter=All&limit=100&page=4");
+    assert.equal(bulk.body.pagination.totalCount, 331);
+    assert.equal(bulk.body.pagination.totalPages, 4);
+    assert.equal(bulk.body.alerts.length, 31);
+    assert.equal(bulk.body.counts.HIGH, 110);
+    assert.equal(bulk.body.counts.MEDIUM, 110);
+    assert.equal(bulk.body.counts.LOW, 111);
+    const unreviewed = await get("alerts", "?filter=Unreviewed&limit=5&page=1");
+    assert.equal(unreviewed.body.pagination.totalCount, 330);
+    assert.equal(unreviewed.body.alerts.length, 5);
+    assert.equal(
+      (await get("alerts", "?filter=Reviewed")).body.pagination.totalCount,
+      1,
+    );
+    const reviewedId = unreviewed.body.alerts[0].id;
+    assert.equal(
+      (await post("alerts", { alertId: reviewedId, reviewed: true })).status,
+      200,
+    );
+    assert.equal(
+      (await get("alerts", "?filter=Reviewed")).body.pagination.totalCount,
+      2,
+    );
+    assert.equal(
+      (await get("alerts", "?filter=Unreviewed")).body.pagination.totalCount,
+      329,
+    );
+    assert.equal(
+      (await get("alerts", "?filter=All&page=999&limit=100")).body.pagination
+        .currentPage,
+      4,
+    );
+    for (const q of ["?limit=1000", "?page=-1", "?filter=Other"])
+      assert.equal((await get("alerts", q)).status, 400);
+    userId = "b";
+    assert.equal(
+      (await get("alerts", "?filter=All")).body.pagination.totalCount,
+      1,
+    );
+    userId = "a";
+    const callbackUrl = "https://callback.example/receive";
+    const registration = await post("callbacks", {
+      action: "register",
+      url: callbackUrl,
+    });
+    assert.equal(registration.status, 200);
+    const verified = await post("callbacks", {
+      action: "verify",
+      url: callbackUrl,
+      challenge: registration.body.challenge,
+    });
+    assert.equal(verified.status, 200);
+    assert.match(verified.body.signingSecret, /^[a-f0-9]{64}$/);
+    userId = "b";
+    assert.equal(
+      (await get("callbacks", "?user_id=a")).body.destinations.length,
+      0,
+    );
+    assert.equal(
+      (
+        await post("callbacks", {
+          action: "delete",
+          url: callbackUrl,
+          user_id: "a",
+        })
+      ).status,
+      200,
+    );
+    assert.equal(
+      (
+        await post("callbacks", {
+          action: "verify",
+          url: callbackUrl,
+          challenge: registration.body.challenge,
+        })
+      ).status,
+      409,
+    );
+    assert.equal(
+      proofRequests,
+      1,
+      "Another account challenge must be rejected before contacting any endpoint",
+    );
+    userId = "a";
+    const own = await get("callbacks");
+    assert.equal(own.body.destinations.length, 1);
+    assert(own.body.destinations[0].verified_at);
+    assert.equal(own.body.destinations[0].signing_secret, undefined);
+    assert.equal(
+      (await post("callbacks", { action: "register", url: callbackUrl }))
+        .status,
+      409,
+      "Verified destination secret cannot be silently rotated",
     );
     userId = null;
     assert.equal((await get("api-keys")).status, 401);
